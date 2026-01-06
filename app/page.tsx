@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { locations } from "./data";
-import { Search, MapPin, ExternalLink, Navigation } from "lucide-react";
+import { locations } from "./data"; // This imports your data
+import Link from "next/link"; // This allows fast internal linking
+import { Search, MapPin, Navigation, Eye } from "lucide-react";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("Mainland");
@@ -25,7 +26,6 @@ export default function Home() {
             <div className="h-8 w-8 rounded-full bg-emerald-600 flex items-center justify-center">
               <span className="text-white font-bold text-sm">LB</span>
             </div>
-            {/* NAME CHANGE IS HERE */}
             <h1 className="text-lg font-bold text-gray-900 tracking-tight">
               Lagos <span className="text-emerald-600">on a budget</span>
             </h1>
@@ -34,7 +34,6 @@ export default function Home() {
 
         {/* --- Toggle & Search Container --- */}
         <div className="px-6 pb-4 max-w-md mx-auto space-y-4">
-          {/* Toggle Switch */}
           <div className="flex p-1 bg-gray-100 rounded-full relative">
             <button
               onClick={() => setActiveTab("Mainland")}
@@ -58,7 +57,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-4 top-3 h-5 w-5 text-gray-400" />
             <input
@@ -117,17 +115,17 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
+                {/* --- UPDATED BUTTONS ARE HERE --- */}
                 <div className="grid grid-cols-2 gap-3 mt-6">
-                  <a
-                    href={loc.tiktokUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  {/* This button now links to your INTERNAL page */}
+                  <Link
+                    href={`/restaurant/${loc.id}`}
                     className="flex items-center justify-center gap-2 py-3 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-colors"
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    Watch
-                  </a>
+                    <Eye className="h-4 w-4" />
+                    View Details
+                  </Link>
+
                   <a
                     href={loc.mapUrl}
                     target="_blank"
