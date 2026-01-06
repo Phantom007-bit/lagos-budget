@@ -1,234 +1,162 @@
 "use client";
 
-import { useState, ChangeEvent } from "react";
-import { Search, MapPin, Video } from "lucide-react";
+import { useState } from "react";
 import { locations } from "./data";
+import { Search, MapPin, ExternalLink, Navigation } from "lucide-react";
 
-// Simple fallback UI components (you may replace with your design system)
-function Button({
-  children,
-  variant = "default",
-  size = "base",
-  className = "",
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "default" | "outline";
-  size?: "sm" | "base";
-}) {
-  return (
-    <button
-      className={
-        "rounded-md font-medium flex items-center justify-center transition-colors " +
-        (variant === "default"
-          ? " bg-green-700 text-white hover:bg-green-800 "
-          : " border border-green-700 text-green-700 hover:bg-green-50 ") +
-        (size === "sm" ? " px-2 py-1 text-sm " : " px-4 py-2 ") +
-        className
-      }
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
+export default function Home() {
+  const [activeTab, setActiveTab] = useState("Mainland");
+  const [searchQuery, setSearchQuery] = useState("");
 
-function Input({
-  className = "",
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className={
-        "rounded border px-3 py-2 outline-none w-full text-base focus:ring-2 focus:ring-green-200 " +
-        className
-      }
-      {...props}
-    />
-  );
-}
-
-function Card({
-  children,
-  className = "",
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={
-        "rounded-md bg-white border border-gray-200 " +
-        className
-      }
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-function CardContent({
-  children,
-  className = "",
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={className} {...props}>
-      {children}
-    </div>
-  );
-}
-
-function Badge({
-  children,
-  className = "",
-  variant = "default",
-  ...props
-}: React.HTMLAttributes<HTMLDivElement> & { variant?: "default" | "secondary" }) {
-  return (
-    <div
-      className={
-        "inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold " +
-        (variant === "default"
-          ? "bg-green-700 text-white"
-          : "bg-gray-200 text-gray-800") +
-        " " +
-        className
-      }
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-export default function LagosDirectory() {
-  // State for activeTab and searchQuery
-  const [activeTab, setActiveTab] = useState<string>("Mainland");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-
-  // Filtered locations logic
-  const filteredLocations = locations.filter((location) => {
-    const matchesTab =
-      location.type.toLowerCase() === activeTab.toLowerCase();
-    const q = searchQuery.trim().toLowerCase();
+  const filteredLocations = locations.filter((loc) => {
+    const matchesTab = loc.type === activeTab;
     const matchesSearch =
-      !q ||
-      location.name.toLowerCase().includes(q) ||
-      location.area.toLowerCase().includes(q);
+      loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      loc.area.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
   return (
-    <div className="min-h-screen bg-background pb-8">
-      {/* Sticky Header with Region Toggle */}
-      <header className="sticky top-0 z-50 bg-green-700 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-white">Lagos Living</h1>
-            <div className="flex rounded-lg bg-green-100 p-1">
-              <Button
-                onClick={() => setActiveTab("Mainland")}
-                variant={activeTab === "Mainland" ? "default" : "outline"}
-                size="sm"
-                className={
-                  activeTab === "Mainland"
-                    ? ""
-                    : "text-green-700 hover:bg-green-200"
-                }
-              >
-                Mainland
-              </Button>
-              <Button
-                onClick={() => setActiveTab("Island")}
-                variant={activeTab === "Island" ? "default" : "outline"}
-                size="sm"
-                className={
-                  activeTab === "Island"
-                    ? ""
-                    : "text-green-700 hover:bg-green-200"
-                }
-              >
-                Island
-              </Button>
+    <main className="min-h-screen bg-gray-50 pb-20 font-sans">
+      {/* --- Sticky Glass Header --- */}
+      <header className="fixed top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+        <div className="mx-auto max-w-md px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-emerald-600 flex items-center justify-center">
+              <span className="text-white font-bold text-sm">LB</span>
             </div>
+            <h1 className="text-lg font-bold text-gray-900 tracking-tight">
+              Lagos<span className="text-emerald-600">Budget</span>
+            </h1>
+          </div>
+        </div>
+
+        {/* --- Toggle & Search Container --- */}
+        <div className="px-6 pb-4 max-w-md mx-auto space-y-4">
+          {/* Toggle Switch */}
+          <div className="flex p-1 bg-gray-100 rounded-full relative">
+            {/* Sliding Background Logic could go here, but using simple buttons for stability */}
+            <button
+              onClick={() => setActiveTab("Mainland")}
+              className={`flex-1 py-2 text-sm font-semibold rounded-full transition-all duration-300 ${
+                activeTab === "Mainland"
+                  ? "bg-white text-emerald-700 shadow-sm ring-1 ring-black/5"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Mainland
+            </button>
+            <button
+              onClick={() => setActiveTab("Island")}
+              className={`flex-1 py-2 text-sm font-semibold rounded-full transition-all duration-300 ${
+                activeTab === "Island"
+                  ? "bg-white text-emerald-700 shadow-sm ring-1 ring-black/5"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Island
+            </button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-4 top-3 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search Ikeja, Date night..."
+              className="w-full pl-11 pr-4 py-3 bg-white border-0 ring-1 ring-gray-200 rounded-2xl text-gray-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm placeholder:text-gray-400"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
       </header>
 
-      {/* Search */}
-      <div className="container mx-auto px-4 pt-6">
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Search locations..."
-            value={searchQuery}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setSearchQuery(e.target.value)
-            }
-            className="pl-10 h-12 bg-white border border-gray-300"
-          />
+      {/* --- Main Feed --- */}
+      <div className="pt-48 px-6 max-w-md mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-800">
+            {activeTab} Spots
+          </h2>
+          <span className="text-xs font-medium px-2 py-1 bg-gray-200 rounded-lg text-gray-600">
+            {filteredLocations.length} results
+          </span>
         </div>
-      </div>
 
-      {/* Location Grid */}
-      <div className="container mx-auto px-4 pt-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredLocations.map((location) => (
-            <Card
-              key={location.id}
-              className="overflow-hidden border-gray-200 hover:shadow-lg transition-shadow"
+        <div className="grid grid-cols-1 gap-6">
+          {filteredLocations.map((loc) => (
+            <div
+              key={loc.id}
+              className="group bg-white rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-transform hover:scale-[1.02] duration-300"
             >
-              <div className="relative h-48 overflow-hidden">
+              {/* Image Section */}
+              <div className="relative h-64 w-full bg-gray-200">
                 <img
-                  src={location.image || "/placeholder.svg"}
-                  alt={location.name}
+                  src={loc.image}
+                  alt={loc.name}
                   className="h-full w-full object-cover"
                 />
-                <Badge className="absolute right-2 top-2 bg-green-700 text-white">
-                  {location.price.toLowerCase() === "free"
-                    ? "Free"
-                    : location.price}
-                </Badge>
+                <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full">
+                  <span className="text-white font-bold text-sm">
+                    {loc.price}
+                  </span>
+                </div>
               </div>
-              <CardContent className="p-4">
-                <h3 className="text-lg font-semibold mb-2">{location.name}</h3>
-                <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
-                  <MapPin className="h-4 w-4" />
-                  <span>{location.area}</span>
+
+              {/* Content Section */}
+              <div className="p-5">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 leading-tight">
+                      {loc.name}
+                    </h3>
+                    <div className="flex items-center gap-1 text-gray-500 mt-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span className="text-sm font-medium">{loc.area}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="flex-1 gap-1"
-                    onClick={() => window.open(location.tiktokUrl, "_blank")}
+
+                {/* Tags (if you added category to data.ts, otherwise remove this line) */}
+                 <div className="flex flex-wrap gap-2 mt-3 mb-6">
+                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg uppercase tracking-wider">
+                      Recommended
+                    </span>
+                 </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  <a
+                    href={loc.tiktokUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 py-3 bg-black text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-colors"
                   >
-                    <Video className="h-4 w-4" />
-                    Watch Review
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1 bg-transparent"
-                    onClick={() => window.open(location.mapUrl, "_blank")}
+                    <ExternalLink className="h-4 w-4" />
+                    Watch
+                  </a>
+                  <a
+                    href={loc.mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 py-3 bg-emerald-100 text-emerald-800 rounded-xl text-sm font-semibold hover:bg-emerald-200 transition-colors"
                   >
-                    <MapPin className="h-4 w-4" />
+                    <Navigation className="h-4 w-4" />
                     Map
-                  </Button>
+                  </a>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
+        
+        {/* Empty State */}
         {filteredLocations.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-lg text-gray-400 mb-2">No locations found</p>
-            <p className="text-sm text-gray-400">
-              Try adjusting your search query
-            </p>
+          <div className="text-center py-20">
+            <p className="text-gray-400">No spots found in {activeTab}.</p>
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
