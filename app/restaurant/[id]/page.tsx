@@ -1,14 +1,13 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { locations } from "@/app/data"; // This imports your data
-import { ArrowLeft, MapPin, Navigation, Share2 } from "lucide-react";
+import { locations } from "@/app/data";
+import { ArrowLeft, MapPin, Navigation, Globe } from "lucide-react";
 
 export default function RestaurantPage() {
   const params = useParams();
   const router = useRouter();
   
-  // Find the location that matches the ID in the URL
   const id = Number(params.id);
   const location = locations.find((loc) => loc.id === id);
 
@@ -25,7 +24,6 @@ export default function RestaurantPage() {
           alt={location.name}
           className="h-full w-full object-cover"
         />
-        {/* Back Button */}
         <button 
           onClick={() => router.back()}
           className="absolute top-4 left-4 h-10 w-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm"
@@ -37,7 +35,6 @@ export default function RestaurantPage() {
       {/* Content */}
       <div className="px-6 -mt-8 relative z-10">
         <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-50">
-          {/* Title & Price */}
           <div className="flex justify-between items-start mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{location.name}</h1>
@@ -53,26 +50,33 @@ export default function RestaurantPage() {
 
           <hr className="border-gray-100 my-6" />
 
-          {/* Description */}
           <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">About this spot</h2>
           <p className="text-gray-600 leading-relaxed">
             {location.description}
           </p>
 
-          {/* Action Buttons */}
+          {/* --- NEW BUTTONS --- */}
           <div className="grid grid-cols-2 gap-4 mt-8">
             <a 
               href={location.mapUrl}
               target="_blank"
-              className="flex items-center justify-center gap-2 py-3.5 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-all"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 py-3.5 bg-gray-100 text-gray-900 rounded-xl font-semibold hover:bg-gray-200 transition-all"
             >
               <Navigation className="h-4 w-4" />
-              Get Directions
+              Directions
             </a>
-            <button className="flex items-center justify-center gap-2 py-3.5 bg-gray-100 text-gray-900 rounded-xl font-semibold hover:bg-gray-200 transition-all">
-              <Share2 className="h-4 w-4" />
-              Share
-            </button>
+            
+            {/* The New Website Button */}
+            <a 
+              href={location.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 py-3.5 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-all"
+            >
+              <Globe className="h-4 w-4" />
+              Visit Website
+            </a>
           </div>
         </div>
       </div>
