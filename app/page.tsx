@@ -25,8 +25,9 @@ export default function Home() {
             <div className="h-8 w-8 rounded-full bg-emerald-600 flex items-center justify-center">
               <span className="text-white font-bold text-sm">LB</span>
             </div>
+            {/* NAME CHANGE IS HERE */}
             <h1 className="text-lg font-bold text-gray-900 tracking-tight">
-              Lagos<span className="text-emerald-600">Budget</span>
+              Lagos <span className="text-emerald-600">on a budget</span>
             </h1>
           </div>
         </div>
@@ -35,7 +36,6 @@ export default function Home() {
         <div className="px-6 pb-4 max-w-md mx-auto space-y-4">
           {/* Toggle Switch */}
           <div className="flex p-1 bg-gray-100 rounded-full relative">
-            {/* Sliding Background Logic could go here, but using simple buttons for stability */}
             <button
               onClick={() => setActiveTab("Mainland")}
               className={`flex-1 py-2 text-sm font-semibold rounded-full transition-all duration-300 ${
@@ -117,15 +117,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Tags (if you added category to data.ts, otherwise remove this line) */}
-                 <div className="flex flex-wrap gap-2 mt-3 mb-6">
-                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg uppercase tracking-wider">
-                      Recommended
-                    </span>
-                 </div>
-
                 {/* Action Buttons */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 mt-6">
                   <a
                     href={loc.tiktokUrl}
                     target="_blank"
