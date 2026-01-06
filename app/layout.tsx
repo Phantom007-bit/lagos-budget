@@ -5,7 +5,7 @@ import "./globals.css";
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Lagos Budget Directory",
+  title: "Lagos on a Budget",
   description: "Find the best spots in Lagos on a budget.",
 };
 
