@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { locations } from "./data";
+import { locations } from "@/app/data";
 import Link from "next/link";
 import { Search, MapPin, Navigation, Eye, Heart, Plus, Dice5, X } from "lucide-react";
 
