@@ -1,14 +1,13 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { locations } from "../../data"; // This looks for data.ts in the app folder
-import { ArrowLeft, MapPin, Navigation, Globe } from "lucide-react";
+import { locations } from "../../data"; // Imports your data
+import { ArrowLeft, MapPin, Navigation, Globe, Utensils, Share2 } from "lucide-react";
 
 export default function RestaurantPage() {
   const params = useParams();
   const router = useRouter();
   
-  // Get the ID from the URL and find the restaurant
   const id = Number(params.id);
   const location = locations.find((loc) => loc.id === id);
 
@@ -16,22 +15,36 @@ export default function RestaurantPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-gray-500">Location not found!</p>
-        <button onClick={() => router.back()} className="ml-4 text-emerald-600 font-bold">
-            Go Back
-        </button>
+        <button onClick={() => router.back()} className="ml-4 text-emerald-600 font-bold">Go Back</button>
       </div>
     );
   }
+
+  // --- SHARE FUNCTION ---
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Check out ${location.name}`,
+          text: `I found this cool spot on LagosBudget: ${location.name}. Budget: ${location.price}`,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log("Error sharing", err);
+      }
+    } else {
+      // Fallback for laptops
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied to clipboard!");
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white pb-20">
       {/* --- Header Image --- */}
       <div className="relative h-72 w-full">
-        <img
-          src={location.image}
-          alt={location.name}
-          className="h-full w-full object-cover"
-        />
+        <img src={location.image} alt={location.name} className="h-full w-full object-cover" />
+        
         {/* Back Button */}
         <button 
           onClick={() => router.back()}
@@ -39,13 +52,20 @@ export default function RestaurantPage() {
         >
           <ArrowLeft className="h-5 w-5 text-gray-800" />
         </button>
+
+        {/* Share Button (New!) */}
+        <button 
+          onClick={handleShare}
+          className="absolute top-4 right-4 h-10 w-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm hover:bg-white transition-colors text-emerald-700"
+        >
+          <Share2 className="h-5 w-5" />
+        </button>
       </div>
 
       {/* --- Content Card --- */}
       <div className="px-6 -mt-8 relative z-10">
         <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-50">
           
-          {/* Title & Price */}
           <div className="flex justify-between items-start mb-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 leading-tight">{location.name}</h1>
@@ -61,14 +81,32 @@ export default function RestaurantPage() {
 
           <hr className="border-gray-100 my-6" />
 
-          {/* Description */}
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">About this spot</h2>
-          <p className="text-gray-600 leading-relaxed text-sm">
+          <p className="text-gray-600 leading-relaxed text-sm mb-8">
             {location.description}
           </p>
 
+          {/* --- MENU PEEK SECTION  --- */}
+          {/* Only shows if the restaurant actually has a menu */}
+          {location.menu && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-3">
+                <Utensils className="h-4 w-4 text-emerald-600" />
+                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-widest">Menu Peek</h2>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                {location.menu.map((item: any, index: number) => (
+                  <div key={index} className="flex justify-between items-center text-sm">
+                    <span className="text-gray-700 font-medium">{item.item}</span>
+                    <span className="text-gray-900 font-bold">{item.price}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* --- Action Buttons --- */}
-          <div className="grid grid-cols-2 gap-4 mt-8">
+          <div className="grid grid-cols-2 gap-4">
             <a 
               href={location.mapUrl}
               target="_blank"
