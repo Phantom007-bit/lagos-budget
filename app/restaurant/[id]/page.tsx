@@ -1,5 +1,11 @@
 "use client";
 
+// This file is the main page component for individual restaurant locations.
+// It displays the restaurant's information, an image, and a back button.
+// Data about the locations is imported, and the Next.js router is used for navigation.
+
+
+
 import { useParams, useRouter } from "next/navigation";
 import { locations } from "@/app/data";
 import { ArrowLeft, MapPin, Navigation, Globe } from "lucide-react";
@@ -31,6 +37,8 @@ export default function RestaurantPage() {
           <ArrowLeft className="h-5 w-5 text-gray-800" />
         </button>
       </div>
+      // Main content area starts here
+      // Header image with back button above content
 
       {/* Content */}
       <div className="px-6 -mt-8 relative z-10">

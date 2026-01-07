@@ -32,7 +32,7 @@ export default function SubmitPage() {
     `;
 
     // Open email client (Replace 'your@email.com' with your real email!)
-    window.location.href = `mailto:morolayojaiyeola@email.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:morolayojaiyeola@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   return (

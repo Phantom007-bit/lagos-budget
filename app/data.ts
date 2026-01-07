@@ -9,7 +9,7 @@ export const locations = [
     category: "Date Night",
     image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=600",
     websiteUrl: "https://www.instagram.com/theorchidbistro",
-    mapUrl: "https://goo.gl/maps/OrchidBistro",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=The+Orchid+Bistro+Ikeja",
     description: "A quaint bistro with a beautiful orchid garden. Perfect for romantic dates and quiet coffee meetings. Their breakfast menu is legendary in Ikeja."
   },
   {
@@ -21,7 +21,7 @@ export const locations = [
     category: "Hangout",
     image: "https://images.unsplash.com/photo-1563514227146-23961732e744?q=80&w=600",
     websiteUrl: "https://laspark.lg.gov.ng/",
-    mapUrl: "https://goo.gl/maps/JJTPark",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=JJT+Park+Alausa",
     description: "One of the few high-quality green spaces in Lagos. Completely free to enter, featuring a fountain, free WiFi, and plenty of space for picnics."
   },
   {
@@ -33,7 +33,7 @@ export const locations = [
     category: "Food & Drinks",
     image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=600",
     websiteUrl: "https://www.instagram.com/lamangolagos",
-    mapUrl: "https://goo.gl/maps/LaMango",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=La+Mango+Restaurant+Ikeja",
     description: "A classic Ikeja spot. Good for group hangouts, watching football matches, and enjoying affordable Nigerian jollof and pepper soup."
   },
   {
@@ -45,7 +45,7 @@ export const locations = [
     category: "Art & Culture",
     image: "https://images.unsplash.com/photo-1552018800-410a5628a58f?q=80&w=600",
     websiteUrl: "https://www.kalakutamuseum.com/",
-    mapUrl: "https://goo.gl/maps/Kalakuta",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Kalakuta+Republic+Museum",
     description: "The former home of Fela Kuti. It is now a museum preserving his legacy. A must-visit for music lovers and history buffs."
   },
   {
@@ -57,7 +57,7 @@ export const locations = [
     category: "Date Night",
     image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=600",
     websiteUrl: "https://rhapsodys.com.ng/",
-    mapUrl: "https://goo.gl/maps/Rhapsodys",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Rhapsodys+Ikeja",
     description: "Located inside ICM, this is a top spot for Friday nights. Great cocktails, lively music, and a premium crowd without being too expensive."
   },
   {
@@ -69,7 +69,7 @@ export const locations = [
     category: "Nightlife",
     image: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=600",
     websiteUrl: "https://www.instagram.com/gridlagos",
-    mapUrl: "https://goo.gl/maps/GridLagos",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Grid+Lagos",
     description: "One of the swankiest spots on the Mainland. The decor is top-tier, making it perfect for birthday dinners and 'Mainland Big Boy' vibes."
   },
   {
@@ -81,7 +81,7 @@ export const locations = [
     category: "Hangout",
     image: "https://images.unsplash.com/photo-1496347646636-ea47f7d6b37b?q=80&w=600",
     websiteUrl: "https://laspark.lg.gov.ng/",
-    mapUrl: "https://goo.gl/maps/Ndubuisi",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Ndubuisi+Kanu+Park",
     description: "A quiet, green park perfect for reading, basketball, or small picnics. Very secure and well-maintained by the state government."
   },
   {
@@ -93,7 +93,7 @@ export const locations = [
     category: "Nightlife",
     image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=600",
     websiteUrl: "https://www.instagram.com/afrikashrine",
-    mapUrl: "https://goo.gl/maps/Shrine",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=New+Afrika+Shrine",
     description: "The heartbeat of Afrobeat. Visit on Thursday or Sunday nights for live performances. It is raw, energetic, and purely Lagos."
   },
   {
@@ -105,7 +105,7 @@ export const locations = [
     category: "Food",
     image: "https://images.unsplash.com/photo-1550966871-3ed3c47e2ce2?q=80&w=600",
     websiteUrl: "https://www.instagram.com/purplebistro",
-    mapUrl: "https://goo.gl/maps/PurpleBistro",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Purple+Bistro+Yaba",
     description: "A student favorite near UNILAG. Very affordable pasta and burgers. Small space but big flavors."
   },
   {
@@ -117,7 +117,7 @@ export const locations = [
     category: "Activity",
     image: "https://images.unsplash.com/photo-1513889961551-628c1e5e2ee9?q=80&w=600",
     websiteUrl: "https://hi-impactplanet.com/",
-    mapUrl: "https://goo.gl/maps/HiImpact",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Hi-Impact+Planet",
     description: "A full amusement park with roller coasters and arcade games. It is a bit of a drive, but worth it for a full day of fun."
   },
 
@@ -131,7 +131,7 @@ export const locations = [
     category: "Art & Culture",
     image: "https://images.unsplash.com/photo-1544967082-d9d3fdd01a1d?q=80&w=600",
     websiteUrl: "https://nikeart.com/",
-    mapUrl: "https://goo.gl/maps/NikeArt",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Nike+Art+Gallery+Lekki",
     description: "West Africa's largest art gallery. A 4-story building filled with breathtaking Nigerian art. You might even meet Mama Nike herself!"
   },
   {
@@ -143,7 +143,7 @@ export const locations = [
     category: "Food",
     image: "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=600",
     websiteUrl: "https://www.instagram.com/danfobistro",
-    mapUrl: "https://goo.gl/maps/DanfoBistro",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Danfo+Bistro+Ikoyi",
     description: "Street food elevated to fine dining. Their Ewa Agoyin sandwich is a must-try. The decor is inspired by the iconic yellow buses of Lagos."
   },
   {
@@ -155,7 +155,7 @@ export const locations = [
     category: "Activity",
     image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=600",
     websiteUrl: "https://ncfnigeria.org/lekki-conservation-centre",
-    mapUrl: "https://goo.gl/maps/LCC",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Lekki+Conservation+Centre",
     description: "Home to the longest canopy walk in Africa. See monkeys, peacocks, and enjoy nature. Warning: The monkeys will steal your snacks!"
   },
   {
@@ -167,7 +167,7 @@ export const locations = [
     category: "Activity",
     image: "https://images.unsplash.com/photo-1511882150382-421056ac8d89?q=80&w=600",
     websiteUrl: "https://www.twinwaterslagos.com/rufus-bee",
-    mapUrl: "https://goo.gl/maps/RufusBee",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Rufus+and+Bee",
     description: "The ultimate arcade center in Lagos. Bowling, video games, and sports viewing. Great for groups and first dates."
   },
   {
@@ -179,7 +179,7 @@ export const locations = [
     category: "Art & Culture",
     image: "https://images.unsplash.com/photo-1499364615650-ec38552f4f34?q=80&w=600",
     websiteUrl: "https://terrakulture.com/",
-    mapUrl: "https://goo.gl/maps/Terra",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Terra+Kulture",
     description: "A cultural hub featuring a restaurant, art gallery, and theater. Their Nigerian food is authentic and the plays are world-class."
   },
   {
@@ -191,7 +191,7 @@ export const locations = [
     category: "Beach",
     image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600",
     websiteUrl: "https://www.landmarkbeach.ng/",
-    mapUrl: "https://goo.gl/maps/Landmark",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Landmark+Beach+Lagos",
     description: "The most organized beach in Lagos. Clean sand, boardwalks, and plenty of food vendors. Great for jogging or just relaxing."
   },
   {
@@ -203,7 +203,7 @@ export const locations = [
     category: "Beach",
     image: "https://images.unsplash.com/photo-1520483602335-3b3dd1c2c071?q=80&w=600",
     websiteUrl: "https://www.thegoodbeachlagos.com/",
-    mapUrl: "https://goo.gl/maps/GoodBeach",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=The+Good+Beach+Lagos",
     description: "A stylish, younger vibe compared to Landmark. The aesthetics are very 'Instagrammable' with a lovely pool area."
   },
   {
@@ -215,7 +215,7 @@ export const locations = [
     category: "Nightlife",
     image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=600",
     websiteUrl: "https://www.hardrockcafe.com/location/lagos/",
-    mapUrl: "https://goo.gl/maps/HardRock",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Hard+Rock+Cafe+Lagos",
     description: "International standard burgers and drinks. Live bands perform often, and the beachfront view is stunning at night."
   },
   {
@@ -227,7 +227,7 @@ export const locations = [
     category: "Coffee & Brunch",
     image: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=600",
     websiteUrl: "https://www.instagram.com/artcafe888",
-    mapUrl: "https://goo.gl/maps/ArtCafe",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Art+Cafe+Victoria+Island",
     description: "A cozy spot with eclectic decor. Famous for their coffee and Mediterranean dishes. A great spot to work from."
   },
   {
@@ -239,7 +239,7 @@ export const locations = [
     category: "Nightlife",
     image: "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?q=80&w=600",
     websiteUrl: "https://www.moistbeach.com/",
-    mapUrl: "https://goo.gl/maps/Moist",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Moist+Beach+Club",
     description: "If you want to party by the ocean, this is the place. It gets very busy on Friday and Saturday nights."
   },
   {
@@ -251,7 +251,7 @@ export const locations = [
     category: "Food",
     image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=600",
     websiteUrl: "https://www.instagram.com/cactuslagos",
-    mapUrl: "https://goo.gl/maps/Cactus",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Cactus+Restaurant+Lagos",
     description: "Famous for their massive desserts and waterfront terrace. A family-friendly spot that has been around for years."
   },
   {
@@ -263,7 +263,7 @@ export const locations = [
     category: "Activity",
     image: "https://images.unsplash.com/photo-1528659850628-9867c2957963?q=80&w=600",
     websiteUrl: "https://upbeatcentre.com/",
-    mapUrl: "https://goo.gl/maps/Upbeat",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Upbeat+Centre+Lekki",
     description: "West Africa's first trampoline park. Great for fitness, kids, or just acting like a kid again."
   },
   {
@@ -275,7 +275,7 @@ export const locations = [
     category: "Date Night",
     image: "https://images.unsplash.com/photo-1485686531765-ba63b07829a0?q=80&w=600",
     websiteUrl: "https://www.flowershop.com.ng/",
-    mapUrl: "https://goo.gl/maps/Flowershop",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Flowershop+Cafe+Lagos",
     description: "A cafe inside a flower shop. The smell is amazing and the aesthetics are perfect for a romantic brunch."
   },
   {
@@ -287,7 +287,7 @@ export const locations = [
     category: "Date Night",
     image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=600",
     websiteUrl: "https://kapadokialagos.com/",
-    mapUrl: "https://goo.gl/maps/Kapadoccia",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Kapadoccia+Lagos",
     description: "Lagos's first cave-themed restaurant. Very dim lighting and unique architecture. It feels like dining in Turkey."
   }
 ];
