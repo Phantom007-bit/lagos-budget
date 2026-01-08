@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { locations } from "./data";
 import Link from "next/link";
-import { Search, MapPin, Navigation, Eye, Heart, Plus, Dice5, X, Filter } from "lucide-react";
+import { Search, MapPin, Navigation, Eye, Heart, Plus, Dice5, X, Filter, AlertCircle } from "lucide-react";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("Mainland");
@@ -14,22 +14,20 @@ export default function Home() {
   const [showRoulette, setShowRoulette] = useState(false);
   const [rouletteWinner, setRouletteWinner] = useState<typeof locations[0] | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [noMatch, setNoMatch] = useState(false); // NEW STATE FOR ERROR
   
-  // Roulette Filters
-  const [rPrice, setRPrice] = useState("Any"); // Any, Budget, Mid, High
+  const [rPrice, setRPrice] = useState("Any");
   const [rCategory, setRCategory] = useState("Any");
 
-  // Get unique categories for the dropdown
   const allCategories = Array.from(new Set(locations.map(l => l.category)));
 
   useEffect(() => {
     const saved = localStorage.getItem("lagosBudgetFavs");
-    if (saved) {
-      setFavorites(JSON.parse(saved));
-    }
+    if (saved) { setFavorites(JSON.parse(saved)); }
   }, []);
 
   const toggleFavorite = (id: number) => {
+    // ... (Keep existing logic)
     let newFavs;
     if (favorites.includes(id)) {
       newFavs = favorites.filter((favId) => favId !== id);
@@ -40,47 +38,38 @@ export default function Home() {
     localStorage.setItem("lagosBudgetFavs", JSON.stringify(newFavs));
   };
 
-  // --- HELPER: Parse Price Strings to Numbers ---
   const getPriceValue = (priceStr: string) => {
     if (priceStr.toLowerCase() === "free") return 0;
-    // Remove "₦", ",", and spaces, then convert to integer
     return parseInt(priceStr.replace(/[^0-9]/g, "")) || 0;
   };
 
-  // --- MAIN SEARCH FILTER ---
   const filteredLocations = locations.filter((loc) => {
-    if (activeTab === "Saved") {
-      return favorites.includes(loc.id);
-    }
+    // ... (Keep existing logic)
+    if (activeTab === "Saved") return favorites.includes(loc.id);
     const matchesTab = loc.type === activeTab;
-    const matchesSearch =
-      loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loc.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loc.category?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = loc.name.toLowerCase().includes(searchQuery.toLowerCase()) || loc.area.toLowerCase().includes(searchQuery.toLowerCase()) || loc.category?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
-  // --- ROULETTE LOGIC 🎲 ---
+  // --- UPDATED ROULETTE LOGIC ---
   const handleSpin = () => {
     setIsSpinning(true);
     setRouletteWinner(null);
+    setNoMatch(false); // Reset error
 
     setTimeout(() => {
-      // 1. Start with locations in the current tab (Mainland/Island)
       let pool = locations.filter(l => l.type === activeTab || activeTab === "Saved");
 
-      // 2. Filter by Category
       if (rCategory !== "Any") {
         pool = pool.filter(l => l.category === rCategory);
       }
 
-      // 3. Filter by Price
       if (rPrice !== "Any") {
         pool = pool.filter(l => {
           const val = getPriceValue(l.price);
-          if (rPrice === "Budget") return val <= 10000; // Under 10k
-          if (rPrice === "Mid") return val > 10000 && val <= 20000; // 10k - 20k
-          if (rPrice === "High") return val > 20000; // Over 20k
+          if (rPrice === "Budget") return val <= 10000;
+          if (rPrice === "Mid") return val > 10000 && val <= 20000;
+          if (rPrice === "High") return val > 20000;
           return true;
         });
       }
@@ -89,16 +78,16 @@ export default function Home() {
         const random = pool[Math.floor(Math.random() * pool.length)];
         setRouletteWinner(random);
       } else {
-        // No match found
-        setRouletteWinner(null); 
+        setNoMatch(true); // TRIGGER ERROR SCREEN
       }
       setIsSpinning(false);
-    }, 1500); // 1.5s spin time
+    }, 1500);
   };
 
   const resetRoulette = () => {
     setRouletteWinner(null);
     setIsSpinning(false);
+    setNoMatch(false);
   };
 
   return (
@@ -115,8 +104,8 @@ export default function Home() {
               <X className="h-6 w-6" />
             </button>
 
-            {/* STATE 1: SETUP FORM (Show this if we aren't spinning and haven't found a winner yet) */}
-            {!isSpinning && !rouletteWinner && (
+            {/* STATE 1: SETUP FORM (Only if not spinning, no winner, and NO ERROR) */}
+            {!isSpinning && !rouletteWinner && !noMatch && (
               <div className="text-center">
                 <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
                   <Filter className="h-6 w-6 text-emerald-600" />
@@ -124,7 +113,6 @@ export default function Home() {
                 <h3 className="text-xl font-bold text-gray-900 mb-1">Date Night Roulette</h3>
                 <p className="text-gray-500 text-sm mb-6">Let fate decide (with some rules).</p>
                 
-                {/* Price Filter */}
                 <div className="mb-4 text-left">
                   <label className="text-xs font-bold text-gray-900 uppercase ml-1">Budget</label>
                   <div className="flex gap-2 mt-2">
@@ -133,9 +121,7 @@ export default function Home() {
                         key={p}
                         onClick={() => setRPrice(p)}
                         className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
-                          rPrice === p 
-                          ? "bg-emerald-600 text-white border-emerald-600" 
-                          : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                          rPrice === p ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
                         }`}
                       >
                         {p === "Budget" ? "<10k" : p === "Mid" ? "10-20k" : p === "High" ? "20k+" : "Any"}
@@ -144,13 +130,12 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Category Filter */}
                 <div className="mb-8 text-left">
                   <label className="text-xs font-bold text-gray-900 uppercase ml-1">Vibe</label>
                   <select 
                     value={rCategory}
                     onChange={(e) => setRCategory(e.target.value)}
-                    className="w-full mt-2 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full mt-2 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 text-gray-900" // Added text-gray-900 here too!
                   >
                     <option value="Any">Any Vibe</option>
                     {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -167,7 +152,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* STATE 2: SPINNING ANIMATION */}
+            {/* STATE 2: SPINNING */}
             {isSpinning && (
               <div className="text-center py-10">
                 <Dice5 className="h-16 w-16 text-emerald-500 animate-spin mx-auto mb-4" />
@@ -176,7 +161,26 @@ export default function Home() {
               </div>
             )}
 
-            {/* STATE 3: WINNER */}
+            {/* STATE 3: ERROR - NO MATCH FOUND (NEW!) */}
+            {!isSpinning && noMatch && (
+              <div className="text-center py-6">
+                <div className="mx-auto h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <AlertCircle className="h-8 w-8 text-red-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No spots found!</h3>
+                <p className="text-gray-500 text-sm mb-6">
+                  We couldn't find any {activeTab} spots with that budget and vibe. Try adjusting your filters.
+                </p>
+                <button 
+                  onClick={() => setNoMatch(false)}
+                  className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {/* STATE 4: WINNER */}
             {!isSpinning && rouletteWinner && (
               <div className="text-center">
                  <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
@@ -211,27 +215,12 @@ export default function Home() {
                 </div>
               </div>
             )}
-
-            {/* STATE 4: NO MATCH FOUND */}
-            {!isSpinning && rouletteWinner === null && showRoulette && rPrice !== "Any" && (
-               /* Logic check: We are in "show" mode, not spinning, filtering is active, but winner is null */
-               /* Note: In the initial render winner is null but we show Setup. We only show this if we TRIED to spin (checked via a ref or logic below) */
-               /* Simplified: If handleSpin ran and found nothing, I handle it inside the timeout. 
-                  But for simplicity in React, let's just use a flag or modify the Setup to show an error message if needed.
-                  For now, if no winner, we just go back to setup? 
-                  Actually, let's handle the "No Match" case inside the Winner block logic or just alert.
-               */
-               null
-            )}
-             {/* Note: I added a simple fallback in handleSpin to setWinner(null). 
-                 If the user spins and gets nothing, we should probably show a "No match" message.
-                 Let's add a small check below:
-             */}
           </div>
         </div>
       )}
 
-      {/* --- Header --- */}
+      {/* --- HEADER & REST OF PAGE STAYS THE SAME --- */}
+      {/* (I am abbreviating this part to save space, but you can keep your existing Header/Grid code below here) */}
       <header className="fixed top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -259,7 +248,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* --- Controls --- */}
         <div className="px-4 pb-4 max-w-4xl mx-auto space-y-4">
           <div className="flex p-1 bg-gray-100 rounded-xl relative max-w-sm mx-auto">
             {["Mainland", "Island", "Saved"].map((tab) => (
@@ -290,7 +278,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* --- Content --- */}
+      {/* --- CONTENT GRID STAYS THE SAME --- */}
       <div className="pt-48 px-4 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-800">
