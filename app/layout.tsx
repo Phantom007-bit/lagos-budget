@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google"; // Using DM Sans for a premium app feel
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
 
-const dmSans = DM_Sans({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Lagos on a Budget",
-  description: "Find the best spots in Lagos on a budget.",
+  description: "Discover affordable spots for date nights and hangouts in Lagos.",
+  generator: 'Next.js',
+  manifest: '/manifest.json',
+  keywords: ['Lagos', 'Date Night', 'Budget', 'Restaurants', 'Fun'],
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 };
 
 export default function RootLayout({
@@ -16,7 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={dmSans.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
