@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { locations } from "./data";
 import Link from "next/link";
+import InstallPrompt from "./components/InstallPrompt";
 import { Search, MapPin, Navigation, Eye, Heart, Plus, Dice5, X, Filter, AlertCircle, Ghost } from "lucide-react";
 
 export default function Home() {
@@ -322,6 +323,7 @@ export default function Home() {
           </div>
         )}
       </div>
+      <InstallPrompt />
     </main>
   );
 }
