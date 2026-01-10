@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   generator: 'Next.js',
   manifest: '/manifest.json',
   icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
+    icon: '/icon.jpeg?v=2',
+    apple: '/icon.jpeg?v=2',
   },
 };
 export default function RootLayout({

@@ -18,11 +18,15 @@ export default function Home() {
   const [noMatch, setNoMatch] = useState(false); // Error state
   
   // Roulette Filters
-  const [rPrice, setRPrice] = useState("Any");
-  const [rCategory, setRCategory] = useState("Any");
+  const [rLocation, setRLocation] = useState("Any"); // Mainland or Island
+  const [rArea, setRArea] = useState("Any");         // Specific Neighborhood (e.g., Ikeja)
+  const [rPrice, setRPrice] = useState("Any");       // Budget
+  const [rCategory, setRCategory] = useState("Any"); // Vibe
 
+  // Get unique categories for dropdown
   const allCategories = Array.from(new Set(locations.map(l => l.category)));
 
+  // Load Favorites on Mount
   useEffect(() => {
     const saved = localStorage.getItem("lagosBudgetFavs");
     if (saved) { setFavorites(JSON.parse(saved)); }
@@ -57,6 +61,7 @@ export default function Home() {
     }
   };
 
+  // Main Grid Filtering
   const filteredLocations = locations.filter((loc) => {
     if (activeTab === "Saved") return favorites.includes(loc.id);
     const matchesTab = loc.type === activeTab;
@@ -71,14 +76,24 @@ export default function Home() {
     setNoMatch(false);
 
     setTimeout(() => {
-      let pool = locations.filter(l => l.type === activeTab || activeTab === "Saved");
+      let pool = locations;
 
-      // Filter by Category
+      // 1. Filter by Broad Location (Mainland/Island)
+      if (rLocation !== "Any") {
+        pool = pool.filter(l => l.type === rLocation);
+      }
+
+      // 2. Filter by Specific Area (Smart Filter)
+      if (rArea !== "Any") {
+        pool = pool.filter(l => l.area === rArea);
+      }
+
+      // 3. Filter by Category
       if (rCategory !== "Any") {
         pool = pool.filter(l => l.category === rCategory);
       }
 
-      // Filter by Price
+      // 4. Filter by Price
       if (rPrice !== "Any") {
         pool = pool.filter(l => {
           const val = getPriceValue(l.price);
@@ -103,6 +118,7 @@ export default function Home() {
     setRouletteWinner(null);
     setIsSpinning(false);
     setNoMatch(false);
+    // Optional: Reset filters too? No, keep them for better UX.
   };
 
   return (
@@ -123,8 +139,44 @@ export default function Home() {
                   <Filter className="h-6 w-6 text-emerald-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-1">Date Night Roulette</h3>
-                <p className="text-gray-500 text-sm mb-6">Let fate decide (with some rules).</p>
+                <p className="text-gray-500 text-sm mb-6">Let fate decide where you go.</p>
                 
+                {/* 1. LOCATION & AREA SELECTOR */}
+                <div className="mb-4 text-left">
+                  <label className="text-xs font-bold text-gray-900 uppercase ml-1">Location</label>
+                  
+                  {/* Broad Toggle */}
+                  <div className="flex gap-2 mt-2 mb-3">
+                    {["Any", "Mainland", "Island"].map((loc) => (
+                      <button 
+                        key={loc} 
+                        onClick={() => { setRLocation(loc); setRArea("Any"); }} 
+                        className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${rLocation === loc ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+                      >
+                        {loc}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Smart Area Dropdown */}
+                  <select 
+                    value={rArea} 
+                    onChange={(e) => setRArea(e.target.value)}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 text-gray-900"
+                  >
+                    <option value="Any">Any Neighborhood</option>
+                    {/* Dynamically generate options based on selected Location */}
+                    {Array.from(new Set(
+                      locations
+                        .filter(l => rLocation === "Any" || l.type === rLocation)
+                        .map(l => l.area)
+                    )).sort().map(area => (
+                      <option key={area} value={area}>{area}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 2. BUDGET SELECTOR */}
                 <div className="mb-4 text-left">
                   <label className="text-xs font-bold text-gray-900 uppercase ml-1">Budget</label>
                   <div className="flex gap-2 mt-2">
@@ -136,6 +188,7 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* 3. VIBE SELECTOR */}
                 <div className="mb-8 text-left">
                   <label className="text-xs font-bold text-gray-900 uppercase ml-1">Vibe</label>
                   <select value={rCategory} onChange={(e) => setRCategory(e.target.value)} className="w-full mt-2 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 text-gray-900">
@@ -155,7 +208,7 @@ export default function Home() {
               <div className="text-center py-10">
                 <Dice5 className="h-16 w-16 text-emerald-500 animate-spin mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-gray-900">Finding a match...</h3>
-                <p className="text-sm text-gray-500">Checking the {rPrice} budget...</p>
+                <p className="text-sm text-gray-500">Checking {rLocation === "Any" ? "Lagos" : rLocation} spots...</p>
               </div>
             )}
 
@@ -166,7 +219,7 @@ export default function Home() {
                   <AlertCircle className="h-8 w-8 text-red-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">No spots found!</h3>
-                <p className="text-gray-500 text-sm mb-6">We couldn't find any {activeTab} spots with that budget and vibe.</p>
+                <p className="text-gray-500 text-sm mb-6">We couldn't find any match with those specific filters.</p>
                 <button onClick={() => setNoMatch(false)} className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm">Try Again</button>
               </div>
             )}
@@ -204,17 +257,14 @@ export default function Home() {
       <header className="fixed top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
           
-          {/*  LOGO: GidiSpots */}
+          {/* LOGO: Clean Version */}
           <div className="flex items-center gap-2">
             <div className="h-10 w-10 bg-gray-900 rounded-xl flex items-center justify-center shadow-sm -rotate-3 hover:rotate-0 transition-all duration-300">
               <span className="text-emerald-400 font-black text-xl">G</span>
             </div>
-            <div className="flex flex-col -space-y-1">
-              <span className="text-xl font-black text-gray-900 tracking-tight leading-none">
-                Gidi<span className="text-emerald-600">Spots</span>
-              </span>
-             
-            </div>
+            <span className="text-xl font-black text-gray-900 tracking-tight leading-none">
+              Gidi<span className="text-emerald-600">Spots</span>
+            </span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -322,8 +372,10 @@ export default function Home() {
             </p>
           </div>
         )}
+        
+        {/* INSTALL APP PROMPT COMPONENT */}
+        <InstallPrompt />
       </div>
-      <InstallPrompt />
     </main>
   );
 }
