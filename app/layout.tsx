@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://gidispots.vercel.app'),
   title: "GidiSpots | Lagos on a Budget",
   description: "The ultimate guide to affordable date nights and hangouts in Lagos.",
   generator: 'Next.js',
