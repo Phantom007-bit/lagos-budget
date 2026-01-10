@@ -10,7 +10,10 @@ export const metadata: Metadata = {
   description: "The ultimate guide to affordable date nights and hangouts in Lagos.",
   generator: 'Next.js',
   manifest: '/manifest.json',
-
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 export default function RootLayout({
   children,
