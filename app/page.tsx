@@ -10,12 +10,13 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<number[]>([]);
   
-  // Roulette State
+  // --- ROULETTE STATE ---
   const [showRoulette, setShowRoulette] = useState(false);
   const [rouletteWinner, setRouletteWinner] = useState<typeof locations[0] | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [noMatch, setNoMatch] = useState(false);
+  const [noMatch, setNoMatch] = useState(false); // Error state
   
+  // Roulette Filters
   const [rPrice, setRPrice] = useState("Any");
   const [rCategory, setRCategory] = useState("Any");
 
@@ -37,12 +38,13 @@ export default function Home() {
     localStorage.setItem("lagosBudgetFavs", JSON.stringify(newFavs));
   };
 
+  // --- HELPER: Parse Price ---
   const getPriceValue = (priceStr: string) => {
     if (priceStr.toLowerCase() === "free") return 0;
     return parseInt(priceStr.replace(/[^0-9]/g, "")) || 0;
   };
 
-  // --- 🚦 NEW FEATURE: TRAFFIC LIGHT PRICE COLORS ---
+  // --- HELPER: Traffic Light Colors 🚦 ---
   const getPriceColor = (price: string) => {
     const val = getPriceValue(price);
     if (price.toLowerCase() === "free" || val < 5000) {
@@ -61,6 +63,7 @@ export default function Home() {
     return matchesTab && matchesSearch;
   });
 
+  // --- ROULETTE LOGIC ---
   const handleSpin = () => {
     setIsSpinning(true);
     setRouletteWinner(null);
@@ -69,10 +72,12 @@ export default function Home() {
     setTimeout(() => {
       let pool = locations.filter(l => l.type === activeTab || activeTab === "Saved");
 
+      // Filter by Category
       if (rCategory !== "Any") {
         pool = pool.filter(l => l.category === rCategory);
       }
 
+      // Filter by Price
       if (rPrice !== "Any") {
         pool = pool.filter(l => {
           const val = getPriceValue(l.price);
@@ -87,7 +92,7 @@ export default function Home() {
         const random = pool[Math.floor(Math.random() * pool.length)];
         setRouletteWinner(random);
       } else {
-        setNoMatch(true);
+        setNoMatch(true); // Show error if empty
       }
       setIsSpinning(false);
     }, 1500);
@@ -110,6 +115,7 @@ export default function Home() {
               <X className="h-6 w-6" />
             </button>
 
+            {/* SETUP STATE */}
             {!isSpinning && !rouletteWinner && !noMatch && (
               <div className="text-center">
                 <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
@@ -143,6 +149,7 @@ export default function Home() {
               </div>
             )}
 
+            {/* SPINNING STATE */}
             {isSpinning && (
               <div className="text-center py-10">
                 <Dice5 className="h-16 w-16 text-emerald-500 animate-spin mx-auto mb-4" />
@@ -151,6 +158,7 @@ export default function Home() {
               </div>
             )}
 
+            {/* ERROR STATE */}
             {!isSpinning && noMatch && (
               <div className="text-center py-6">
                 <div className="mx-auto h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -162,6 +170,7 @@ export default function Home() {
               </div>
             )}
 
+            {/* WINNER STATE */}
             {!isSpinning && rouletteWinner && (
               <div className="text-center">
                  <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
@@ -169,13 +178,11 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">We found a match!</h3>
                 <div className="rounded-2xl overflow-hidden mb-6 border border-gray-100 shadow-sm">
-                  {/* Lazy Load the Roulette Image too */}
                   <img src={rouletteWinner.image} loading="lazy" className="h-40 w-full object-cover" />
                   <div className="p-4 bg-gray-50 text-left">
                     <h4 className="font-bold text-gray-900 text-lg">{rouletteWinner.name}</h4>
                     <div className="flex justify-between items-center mt-1">
                       <p className="text-sm text-gray-500">{rouletteWinner.area}</p>
-                      {/* Using the Color Code Function Here */}
                       <span className={`text-xs font-bold px-2 py-1 rounded border ${getPriceColor(rouletteWinner.price)}`}>
                         {rouletteWinner.price}
                       </span>
@@ -195,13 +202,18 @@ export default function Home() {
       {/* --- HEADER --- */}
       <header className="fixed top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
+          
+          {/*  LOGO: GidiSpots */}
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-emerald-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">LB</span>
+            <div className="h-10 w-10 bg-gray-900 rounded-xl flex items-center justify-center shadow-sm -rotate-3 hover:rotate-0 transition-all duration-300">
+              <span className="text-emerald-400 font-black text-xl">G</span>
             </div>
-            <h1 className="text-lg font-bold text-gray-900 tracking-tight">
-              Lagos <span className="text-emerald-600">Budget</span>
-            </h1>
+            <div className="flex flex-col -space-y-1">
+              <span className="text-xl font-black text-gray-900 tracking-tight leading-none">
+                Gidi<span className="text-emerald-600">Spots</span>
+              </span>
+             
+            </div>
           </div>
           
           <div className="flex items-center gap-2">
@@ -216,6 +228,7 @@ export default function Home() {
         </div>
 
         <div className="px-4 pb-4 max-w-4xl mx-auto space-y-4">
+          {/* TABS */}
           <div className="flex p-1 bg-gray-100 rounded-xl relative max-w-sm mx-auto">
             {["Mainland", "Island", "Saved"].map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${activeTab === tab ? "bg-white text-emerald-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
@@ -224,6 +237,7 @@ export default function Home() {
             ))}
           </div>
 
+          {/* SEARCH */}
           <div className="relative max-w-lg mx-auto">
             <Search className="absolute left-4 top-3 h-5 w-5 text-gray-400" />
             <input type="text" placeholder="Search Lekki, Beach, or Date night..." className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-gray-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm placeholder:text-gray-400" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
@@ -246,7 +260,8 @@ export default function Home() {
           {filteredLocations.map((loc) => (
             <div key={loc.id} className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-300 hover:-translate-y-1 relative">
               <div className="relative h-56 w-full bg-gray-200">
-                {/*  LAZY LOADING ADDED HERE */}
+                
+                {/* Lazy Load Image */}
                 <img src={loc.image} alt={loc.name} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 
                 <button onClick={(e) => { e.preventDefault(); toggleFavorite(loc.id); }} className="absolute top-3 right-3 p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/40 transition-all">
@@ -262,7 +277,7 @@ export default function Home() {
                 <div className="mb-4">
                   <div className="flex justify-between items-start">
                     <h3 className="text-lg font-bold text-gray-900 leading-snug mb-1">{loc.name}</h3>
-                    {/* PRICE COLOR FUNCTION */}
+                    {/* Traffic Light Price Badge */}
                     <span className={`text-xs font-bold px-2 py-1 rounded-md border ${getPriceColor(loc.price)}`}>
                         {loc.price}
                     </span>
@@ -286,7 +301,7 @@ export default function Home() {
           ))}
         </div>
 
-        {/*  EMPTY STATE GRAPHIC */}
+        {/* EMPTY STATES */}
         {filteredLocations.length === 0 && (
           <div className="text-center py-20">
             <div className="mx-auto h-20 w-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">

@@ -6,14 +6,12 @@ import { Analytics } from "@vercel/analytics/react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Lagos on a Budget",
-  description: "Discover affordable spots for date nights and hangouts in Lagos.",
+  title: "GidiSpots | Lagos on a Budget",
+  description: "The ultimate guide to affordable date nights and hangouts in Lagos.",
   generator: 'Next.js',
   manifest: '/manifest.json',
-  keywords: ['Lagos', 'Date Night', 'Budget', 'Restaurants', 'Fun'],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
-};
 
+};
 export default function RootLayout({
   children,
 }: Readonly<{
