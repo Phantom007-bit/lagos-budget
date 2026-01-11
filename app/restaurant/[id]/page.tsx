@@ -6,11 +6,30 @@ import { ArrowLeft, MapPin, Navigation, Share2, Info, Utensils } from "lucide-re
 import { use } from "react"; 
 
 export default function RestaurantPage({ params }: { params: Promise<{ id: string }> }) {
-
   const { id } = use(params);
-
-  // Find location using the unwrapped ID
   const loc = locations.find((l) => l.id === parseInt(id));
+
+  // --- SHARE FUNCTION ---
+  const handleShare = async () => {
+    if (!loc) return;
+
+    if (navigator.share) {
+      // Use the phone's native share menu (WhatsApp, Twitter, etc.)
+      try {
+        await navigator.share({
+          title: loc.name,
+          text: `Check out ${loc.name} on GidiSpots!`,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log("Share canceled", err);
+      }
+    } else {
+      // Fallback for desktops: Copy link to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied to clipboard! 📋");
+    }
+  };
 
   if (!loc) {
     return (
@@ -33,7 +52,12 @@ export default function RestaurantPage({ params }: { params: Promise<{ id: strin
           <Link href="/" className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-all">
             <ArrowLeft className="h-6 w-6" />
           </Link>
-          <button className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-all">
+          
+          {/* SHARE BUTTON WITH ONCLICK */}
+          <button 
+            onClick={handleShare}
+            className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-all active:scale-90"
+          >
             <Share2 className="h-6 w-6" />
           </button>
         </div>
@@ -90,7 +114,7 @@ export default function RestaurantPage({ params }: { params: Promise<{ id: strin
             </div>
         )}
 
-        {/* Action Button */}
+        {/* Action Buttons */}
         <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-gray-100 flex gap-3 z-50 md:relative md:border-none md:bg-transparent md:p-0">
           <a 
             href={loc.mapUrl} 
