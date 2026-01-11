@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://gidispots.vercel.app'),
-  title: "GidiSpots | Lagos on a Budget",
+  title: "GidiSpots",
   description: "The ultimate guide to affordable date nights and hangouts in Lagos.",
   generator: 'Next.js',
   manifest: '/manifest.json',

@@ -1,133 +1,108 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { locations } from "../../data"; // Imports your data
-import { ArrowLeft, MapPin, Navigation, Globe, Utensils, Share2 } from "lucide-react";
+import { locations } from "../../data";
+import Link from "next/link";
+import { ArrowLeft, MapPin, Navigation, Share2, Info, Utensils } from "lucide-react";
+import { use } from "react"; 
 
-export default function RestaurantPage() {
-  const params = useParams();
-  const router = useRouter();
-  
-  const id = Number(params.id);
-  const location = locations.find((loc) => loc.id === id);
+export default function RestaurantPage({ params }: { params: Promise<{ id: string }> }) {
 
-  if (!location) {
+  const { id } = use(params);
+
+  // Find location using the unwrapped ID
+  const loc = locations.find((l) => l.id === parseInt(id));
+
+  if (!loc) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Location not found!</p>
-        <button onClick={() => router.back()} className="ml-4 text-emerald-600 font-bold">Go Back</button>
-      </div>
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Spot not found 😕</h1>
+            <Link href="/" className="text-emerald-600 font-bold hover:underline">Go Home</Link>
+        </div>
     );
   }
 
-  // --- SHARE FUNCTION ---
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Check out ${location.name}`,
-          text: `I found this cool spot on LagosBudget: ${location.name}. Budget: ${location.price}`,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.log("Error sharing", err);
-      }
-    } else {
-      // Fallback for laptops
-      navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
-    }
-  };
-
   return (
     <main className="min-h-screen bg-white pb-20">
-      {/* --- Header Image --- */}
+      {/* --- HERO IMAGE --- */}
       <div className="relative h-72 w-full">
-        <img src={location.image} alt={location.name} className="h-full w-full object-cover" />
+        <img src={loc.image} alt={loc.name} className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
         
-        {/* Back Button */}
-        <button 
-          onClick={() => router.back()}
-          className="absolute top-4 left-4 h-10 w-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm hover:bg-white transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5 text-gray-800" />
-        </button>
+        {/* Navigation Header */}
+        <div className="absolute top-0 w-full p-4 flex justify-between items-center z-10">
+          <Link href="/" className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-all">
+            <ArrowLeft className="h-6 w-6" />
+          </Link>
+          <button className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-all">
+            <Share2 className="h-6 w-6" />
+          </button>
+        </div>
 
-        {/* Share Button (New!) */}
-        <button 
-          onClick={handleShare}
-          className="absolute top-4 right-4 h-10 w-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-sm hover:bg-white transition-colors text-emerald-700"
-        >
-          <Share2 className="h-5 w-5" />
-        </button>
-      </div>
-
-      {/* --- Content Card --- */}
-      <div className="px-6 -mt-8 relative z-10">
-        <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-50">
-          
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 leading-tight">{location.name}</h1>
-              <div className="flex items-center gap-1.5 text-gray-500 mt-1">
-                <MapPin className="h-4 w-4 text-emerald-600" />
-                <span className="font-medium">{location.area}, {location.type}</span>
-              </div>
-            </div>
-            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-bold rounded-lg whitespace-nowrap">
-              {location.price}
+        {/* Title Overlay */}
+        <div className="absolute bottom-0 w-full p-6 text-white">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-1 bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-md">
+                {loc.category}
+            </span>
+            <span className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider rounded-md border border-white/30">
+                {loc.price}
             </span>
           </div>
-
-          <hr className="border-gray-100 my-6" />
-
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">About this spot</h2>
-          <p className="text-gray-600 leading-relaxed text-sm mb-8">
-            {location.description}
-          </p>
-
-          {/* --- MENU PEEK SECTION  --- */}
-          {/* Only shows if the restaurant actually has a menu */}
-          {location.menu && (
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-3">
-                <Utensils className="h-4 w-4 text-emerald-600" />
-                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-widest">Menu Peek</h2>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-                {location.menu.map((item: any, index: number) => (
-                  <div key={index} className="flex justify-between items-center text-sm">
-                    <span className="text-gray-700 font-medium">{item.item}</span>
-                    <span className="text-gray-900 font-bold">{item.price}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* --- Action Buttons --- */}
-          <div className="grid grid-cols-2 gap-4">
-            <a 
-              href={location.mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-3.5 bg-gray-100 text-gray-900 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all"
-            >
-              <Navigation className="h-4 w-4" />
-              Directions
-            </a>
-            
-            <a 
-              href={location.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-3.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
-            >
-              <Globe className="h-4 w-4" />
-              Visit Website
-            </a>
+          <h1 className="text-3xl font-black leading-tight mb-1">{loc.name}</h1>
+          <div className="flex items-center gap-1 text-gray-300 text-sm font-medium">
+            <MapPin className="h-4 w-4 text-emerald-400" />
+            <span>{loc.area}, {loc.type}</span>
           </div>
         </div>
+      </div>
+
+      {/* --- CONTENT --- */}
+      <div className="px-5 py-8 max-w-2xl mx-auto space-y-8">
+        
+        {/* Description Section */}
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Info className="h-5 w-5 text-emerald-600" />
+                The Vibe
+            </h2>
+            <p className="text-gray-600 leading-relaxed text-sm">
+                {loc.description || "A great spot to visit in Lagos. Popular for its atmosphere and service."}
+            </p>
+        </div>
+
+        {/* Menu Highlights Section */}
+        {loc.menuHighlights && loc.menuHighlights.length > 0 && (
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Utensils className="h-5 w-5 text-orange-500" />
+                    Must Try Items
+                </h2>
+                <div className="grid grid-cols-1 gap-3">
+                    {loc.menuHighlights.map((item, index) => (
+                        <div key={index} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                            <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-xs">
+                                {index + 1}
+                            </div>
+                            <span className="text-gray-700 font-medium text-sm">{item}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {/* Action Button */}
+        <div className="fixed bottom-0 left-0 w-full p-4 bg-white border-t border-gray-100 flex gap-3 z-50 md:relative md:border-none md:bg-transparent md:p-0">
+          <a 
+            href={loc.mapUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex-1 py-4 bg-gray-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-gray-800 transition-transform active:scale-95"
+          >
+            <Navigation className="h-5 w-5" />
+            Get Directions
+          </a>
+        </div>
+
       </div>
     </main>
   );
