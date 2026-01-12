@@ -22,13 +22,10 @@ export default function Home() {
     vibe: "Any"
   });
 
-  // --- DYNAMIC CATEGORY LIST (Scans your data!) ---
+  // --- DYNAMIC CATEGORY LIST ---
   const uniqueCategories = useMemo(() => {
-    // 1. Get all categories safely
     const allCats = locations.map((loc: any) => loc.category || "General");
-    // 2. Remove duplicates
     const unique = Array.from(new Set(allCats));
-    // 3. Sort alphabetically and add "Any"
     return ["Any", ...unique.sort()];
   }, []);
 
@@ -74,7 +71,6 @@ export default function Home() {
         const priceCat = getPriceCategory(loc.price || "0");
         const matchesPrice = rouletteFilters.price === "Any" || priceCat === rouletteFilters.price;
         
-        // Vibe Match: Exact match from the dynamic list
         const matchesVibe = rouletteFilters.vibe === "Any" || loc.category === rouletteFilters.vibe;
 
         return matchesType && matchesPrice && matchesVibe;
@@ -166,7 +162,8 @@ export default function Home() {
             <input
               type="text"
               placeholder="Search spots, vibes, or areas..."
-              className="w-full pl-14 pr-4 py-4 bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-base font-medium placeholder:text-gray-400"
+              // 👇 I added "text-gray-900" here to fix invisible text on mobile
+              className="w-full pl-14 pr-4 py-4 bg-white text-gray-900 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-base font-medium placeholder:text-gray-400"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -277,19 +274,22 @@ export default function Home() {
                 <h2 className="text-2xl font-black text-gray-900 mb-2">Suggest a Spot</h2>
                 <p className="text-gray-500 mb-6 text-sm">Know a hidden gem? Tell us about it.</p>
 
-                {/* FORM */}
+                {/* 👇 REPLACE 'YOUR_FORM_ID' WITH YOUR REAL FORMSPREE ID 👇 */}
                 <form action="https://formspree.io/f/mvzgekor" method="POST" className="space-y-4">
                     <div>
                         <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Spot Name</label>
-                        <input name="name" type="text" required className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium" />
+                        {/* Added text-gray-900 to fix invisible text on mobile */}
+                        <input name="name" type="text" required className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium placeholder:text-gray-400" placeholder="e.g. Danfo Bistro" />
                     </div>
                     <div>
                         <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Area (e.g. Lekki, Yaba)</label>
-                        <input name="area" type="text" required className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium" />
+                        {/* Added text-gray-900 */}
+                        <input name="area" type="text" required className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium placeholder:text-gray-400" placeholder="e.g. Ikoyi" />
                     </div>
                     <div>
                         <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Your Comment</label>
-                        <textarea name="message" rows={3} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium"></textarea>
+                        {/* Added text-gray-900 */}
+                        <textarea name="message" rows={3} className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium placeholder:text-gray-400" placeholder="Best pasta in Lagos..."></textarea>
                     </div>
                     <button type="submit" className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition-colors">
                         Submit Suggestion
@@ -339,7 +339,7 @@ export default function Home() {
                             </div>
                         </div>
 
-                        {/* Price Filter (NEW: With Ranges) */}
+                        {/* Price Filter */}
                         <div>
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Budget</label>
                             <div className="grid grid-cols-2 gap-2">
@@ -365,7 +365,8 @@ export default function Home() {
                             <select 
                                 value={rouletteFilters.vibe}
                                 onChange={(e) => setRouletteFilters({...rouletteFilters, vibe: e.target.value})}
-                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-700 focus:outline-none focus:border-emerald-500 appearance-none"
+                                // Added text-gray-900 to fix invisible dropdown text on mobile
+                                className="w-full p-3 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-emerald-500 appearance-none"
                             >
                                 {uniqueCategories.map(cat => (
                                     <option key={cat} value={cat}>
