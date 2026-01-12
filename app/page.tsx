@@ -1,381 +1,448 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { locations } from "./data";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import InstallPrompt from "./components/InstallPrompt";
-import { Search, MapPin, Navigation, Eye, Heart, Plus, Dice5, X, Filter, AlertCircle, Ghost } from "lucide-react";
+import { locations } from "./data"; 
+import { Search, MapPin, Dice5, X, ChevronRight, PlusCircle, Filter, DollarSign, PartyPopper } from "lucide-react";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("Mainland");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const [search, setSearch] = useState("");
+  const [mainFilter, setMainFilter] = useState<"All" | "Mainland" | "Island">("All");
+
+  // --- MODAL STATES ---
+  const [isAddSpotOpen, setIsAddSpotOpen] = useState(false);
+  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   
-  // --- ROULETTE STATE ---
-  const [showRoulette, setShowRoulette] = useState(false);
-  const [rouletteWinner, setRouletteWinner] = useState<typeof locations[0] | null>(null);
+  // --- ROULETTE STATES ---
+  const [rouletteResult, setRouletteResult] = useState<any | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [noMatch, setNoMatch] = useState(false); // Error state
-  
-  // Roulette Filters
-  const [rLocation, setRLocation] = useState("Any"); // Mainland or Island
-  const [rArea, setRArea] = useState("Any");         // Specific Neighborhood (e.g., Ikeja)
-  const [rPrice, setRPrice] = useState("Any");       // Budget
-  const [rCategory, setRCategory] = useState("Any"); // Vibe
-
-  // Get unique categories for dropdown
-  const allCategories = Array.from(new Set(locations.map(l => l.category)));
-
-  // Load Favorites on Mount
-  useEffect(() => {
-    const saved = localStorage.getItem("lagosBudgetFavs");
-    if (saved) { setFavorites(JSON.parse(saved)); }
-  }, []);
-
-  const toggleFavorite = (id: number) => {
-    let newFavs;
-    if (favorites.includes(id)) {
-      newFavs = favorites.filter((favId) => favId !== id);
-    } else {
-      newFavs = [...favorites, id];
-    }
-    setFavorites(newFavs);
-    localStorage.setItem("lagosBudgetFavs", JSON.stringify(newFavs));
-  };
-
-  // --- HELPER: Parse Price ---
-  const getPriceValue = (priceStr: string) => {
-    if (priceStr.toLowerCase() === "free") return 0;
-    return parseInt(priceStr.replace(/[^0-9]/g, "")) || 0;
-  };
-
-  // --- HELPER: Traffic Light Colors 🚦 ---
-  const getPriceColor = (price: string) => {
-    const val = getPriceValue(price);
-    if (price.toLowerCase() === "free" || val < 5000) {
-      return "bg-green-100 text-green-800 border-green-200"; // Budget (Green)
-    } else if (val >= 20000) {
-      return "bg-red-100 text-red-800 border-red-200";     // High End (Red)
-    } else {
-      return "bg-orange-100 text-orange-800 border-orange-200"; // Mid (Orange)
-    }
-  };
-
-  // Main Grid Filtering
-  const filteredLocations = locations.filter((loc) => {
-    if (activeTab === "Saved") return favorites.includes(loc.id);
-    const matchesTab = loc.type === activeTab;
-    const matchesSearch = loc.name.toLowerCase().includes(searchQuery.toLowerCase()) || loc.area.toLowerCase().includes(searchQuery.toLowerCase()) || loc.category?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
+  const [rouletteFilters, setRouletteFilters] = useState({
+    type: "All",
+    price: "Any",
+    vibe: "Any"
   });
 
-  // --- ROULETTE LOGIC ---
+  // --- DYNAMIC CATEGORY LIST (Scans your data!) ---
+  const uniqueCategories = useMemo(() => {
+    // 1. Get all categories safely
+    const allCats = locations.map((loc: any) => loc.category || "General");
+    // 2. Remove duplicates
+    const unique = Array.from(new Set(allCats));
+    // 3. Sort alphabetically and add "Any"
+    return ["Any", ...unique.sort()];
+  }, []);
+
+  // --- HELPER: Traffic Light Logic 🚦 ---
+  const getPriceColor = (priceString: string) => {
+    if (!priceString) return "bg-gray-100 text-gray-800 border-gray-200";
+    const price = parseInt(priceString.toString().replace(/[^0-9]/g, ""));
+    if (isNaN(price)) return "bg-gray-100 text-gray-800 border-gray-200"; 
+    if (price <= 5000) return "bg-emerald-100 text-emerald-800 border-emerald-200"; // 🟢 Budget
+    if (price <= 20000) return "bg-orange-100 text-orange-800 border-orange-200";   // 🟠 Mid
+    return "bg-rose-100 text-rose-800 border-rose-200";                              // 🔴 Splurge
+  };
+
+  // --- HELPER: Get Price Category ---
+  const getPriceCategory = (priceString: string) => {
+    const price = parseInt(priceString.toString().replace(/[^0-9]/g, ""));
+    if (price <= 5000) return "Budget";
+    if (price <= 20000) return "Mid";
+    return "Splurge";
+  };
+
+  // --- MAIN PAGE FILTER LOGIC ---
+  const filteredLocations = locations.filter((loc: any) => {
+    const name = loc?.name || "";
+    const category = loc?.category || "";
+    const type = loc?.type || "";
+    const searchTerm = search.toLowerCase();
+
+    const matchesSearch =
+      name.toLowerCase().includes(searchTerm) ||
+      category.toLowerCase().includes(searchTerm);
+
+    const matchesFilter = mainFilter === "All" || type === mainFilter;
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  // --- ROULETTE SPIN LOGIC 🎰 ---
   const handleSpin = () => {
+    const candidates = locations.filter((loc: any) => {
+        const matchesType = rouletteFilters.type === "All" || loc.type === rouletteFilters.type;
+        
+        const priceCat = getPriceCategory(loc.price || "0");
+        const matchesPrice = rouletteFilters.price === "Any" || priceCat === rouletteFilters.price;
+        
+        // Vibe Match: Exact match from the dynamic list
+        const matchesVibe = rouletteFilters.vibe === "Any" || loc.category === rouletteFilters.vibe;
+
+        return matchesType && matchesPrice && matchesVibe;
+    });
+
+    if (candidates.length === 0) {
+        alert("No spots found with those exact filters! Try selecting 'Any' for one of the options.");
+        return;
+    }
+
     setIsSpinning(true);
-    setRouletteWinner(null);
-    setNoMatch(false);
-
+    setRouletteResult(null);
+    
     setTimeout(() => {
-      let pool = locations;
-
-      // 1. Filter by Broad Location (Mainland/Island)
-      if (rLocation !== "Any") {
-        pool = pool.filter(l => l.type === rLocation);
-      }
-
-      // 2. Filter by Specific Area (Smart Filter)
-      if (rArea !== "Any") {
-        pool = pool.filter(l => l.area === rArea);
-      }
-
-      // 3. Filter by Category
-      if (rCategory !== "Any") {
-        pool = pool.filter(l => l.category === rCategory);
-      }
-
-      // 4. Filter by Price
-      if (rPrice !== "Any") {
-        pool = pool.filter(l => {
-          const val = getPriceValue(l.price);
-          if (rPrice === "Budget") return val <= 10000;
-          if (rPrice === "Mid") return val > 10000 && val <= 20000;
-          if (rPrice === "High") return val > 20000;
-          return true;
-        });
-      }
-
-      if (pool.length > 0) {
-        const random = pool[Math.floor(Math.random() * pool.length)];
-        setRouletteWinner(random);
-      } else {
-        setNoMatch(true); // Show error if empty
-      }
+      const random = candidates[Math.floor(Math.random() * candidates.length)];
+      setRouletteResult(random);
       setIsSpinning(false);
     }, 1500);
   };
 
-  const resetRoulette = () => {
-    setRouletteWinner(null);
-    setIsSpinning(false);
-    setNoMatch(false);
-    // Optional: Reset filters too? No, keep them for better UX.
-  };
+  // --- ROULETTE OPTIONS ---
+  const priceOptions = [
+    { label: "Any Price", value: "Any" },
+    { label: "Budget (₦0 - 5k)", value: "Budget" },
+    { label: "Mid (₦5k - 20k)", value: "Mid" },
+    { label: "Splurge (₦20k+)", value: "Splurge" }
+  ];
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-20 font-sans relative">
+    <main className="min-h-screen bg-gray-50 pb-20 selection:bg-emerald-100 selection:text-emerald-900">
       
-      {/* --- ROULETTE MODAL --- */}
-      {showRoulette && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-2xl animate-in fade-in zoom-in duration-300">
-            <button onClick={() => setShowRoulette(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900">
-              <X className="h-6 w-6" />
-            </button>
-
-            {/* SETUP STATE */}
-            {!isSpinning && !rouletteWinner && !noMatch && (
-              <div className="text-center">
-                <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-                  <Filter className="h-6 w-6 text-emerald-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">Date Night Roulette</h3>
-                <p className="text-gray-500 text-sm mb-6">Let fate decide where you go.</p>
-                
-                {/* 1. LOCATION & AREA SELECTOR */}
-                <div className="mb-4 text-left">
-                  <label className="text-xs font-bold text-gray-900 uppercase ml-1">Location</label>
-                  
-                  {/* Broad Toggle */}
-                  <div className="flex gap-2 mt-2 mb-3">
-                    {["Any", "Mainland", "Island"].map((loc) => (
-                      <button 
-                        key={loc} 
-                        onClick={() => { setRLocation(loc); setRArea("Any"); }} 
-                        className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${rLocation === loc ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
-                      >
-                        {loc}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Smart Area Dropdown */}
-                  <select 
-                    value={rArea} 
-                    onChange={(e) => setRArea(e.target.value)}
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 text-gray-900"
-                  >
-                    <option value="Any">Any Neighborhood</option>
-                    {/* Dynamically generate options based on selected Location */}
-                    {Array.from(new Set(
-                      locations
-                        .filter(l => rLocation === "Any" || l.type === rLocation)
-                        .map(l => l.area)
-                    )).sort().map(area => (
-                      <option key={area} value={area}>{area}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 2. BUDGET SELECTOR */}
-                <div className="mb-4 text-left">
-                  <label className="text-xs font-bold text-gray-900 uppercase ml-1">Budget</label>
-                  <div className="flex gap-2 mt-2">
-                    {["Any", "Budget", "Mid", "High"].map((p) => (
-                      <button key={p} onClick={() => setRPrice(p)} className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${rPrice === p ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}>
-                        {p === "Budget" ? "<10k" : p === "Mid" ? "10-20k" : p === "High" ? "20k+" : "Any"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 3. VIBE SELECTOR */}
-                <div className="mb-8 text-left">
-                  <label className="text-xs font-bold text-gray-900 uppercase ml-1">Vibe</label>
-                  <select value={rCategory} onChange={(e) => setRCategory(e.target.value)} className="w-full mt-2 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 text-gray-900">
-                    <option value="Any">Any Vibe</option>
-                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-
-                <button onClick={handleSpin} className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-all shadow-lg">
-                  <Dice5 className="h-5 w-5" /> Spin the Wheel
-                </button>
-              </div>
-            )}
-
-            {/* SPINNING STATE */}
-            {isSpinning && (
-              <div className="text-center py-10">
-                <Dice5 className="h-16 w-16 text-emerald-500 animate-spin mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-gray-900">Finding a match...</h3>
-                <p className="text-sm text-gray-500">Checking {rLocation === "Any" ? "Lagos" : rLocation} spots...</p>
-              </div>
-            )}
-
-            {/* ERROR STATE */}
-            {!isSpinning && noMatch && (
-              <div className="text-center py-6">
-                <div className="mx-auto h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                  <AlertCircle className="h-8 w-8 text-red-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No spots found!</h3>
-                <p className="text-gray-500 text-sm mb-6">We couldn't find any match with those specific filters.</p>
-                <button onClick={() => setNoMatch(false)} className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm">Try Again</button>
-              </div>
-            )}
-
-            {/* WINNER STATE */}
-            {!isSpinning && rouletteWinner && (
-              <div className="text-center">
-                 <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-                  <div className="text-2xl">🎉</div>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">We found a match!</h3>
-                <div className="rounded-2xl overflow-hidden mb-6 border border-gray-100 shadow-sm">
-                  <img src={rouletteWinner.image} loading="lazy" className="h-40 w-full object-cover" />
-                  <div className="p-4 bg-gray-50 text-left">
-                    <h4 className="font-bold text-gray-900 text-lg">{rouletteWinner.name}</h4>
-                    <div className="flex justify-between items-center mt-1">
-                      <p className="text-sm text-gray-500">{rouletteWinner.area}</p>
-                      <span className={`text-xs font-bold px-2 py-1 rounded border ${getPriceColor(rouletteWinner.price)}`}>
-                        {rouletteWinner.price}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={resetRoulette} className="py-3 bg-gray-100 text-gray-900 rounded-xl font-bold text-sm hover:bg-gray-200">Spin Again</button>
-                  <Link href={`/restaurant/${rouletteWinner.id}`} className="py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-700">Let's Go!</Link>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* --- HEADER --- */}
-      <header className="fixed top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
-          
-          {/* LOGO: Clean Version */}
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 bg-gray-900 rounded-xl flex items-center justify-center shadow-sm -rotate-3 hover:rotate-0 transition-all duration-300">
-              <span className="text-emerald-400 font-black text-xl">G</span>
-            </div>
-            <span className="text-xl font-black text-gray-900 tracking-tight leading-none">
-              Gidi<span className="text-emerald-600">Spots</span>
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <button onClick={() => { setShowRoulette(true); resetRoulette(); }} className="bg-emerald-100 text-emerald-700 p-2 rounded-full hover:bg-emerald-200 transition-colors">
-              <Dice5 className="h-5 w-5" />
-            </button>
-            <Link href="/submit" className="flex items-center gap-1 bg-gray-900 text-white px-3 py-2 rounded-full text-xs font-bold">
-              <Plus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Add Spot</span>
-            </Link>
-          </div>
+      {/* --- 1. PREMIUM GLASS NAVBAR --- */}
+      <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-4 flex justify-between items-center transition-all">
+        <div className="flex items-center gap-3">
+           <div className="h-9 w-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-emerald-200 shadow-lg transform rotate-3">
+             G
+           </div>
+           <span className="font-bold text-xl tracking-tight text-gray-900">GidiSpots</span>
         </div>
 
-        <div className="px-4 pb-4 max-w-4xl mx-auto space-y-4">
-          {/* TABS */}
-          <div className="flex p-1 bg-gray-100 rounded-xl relative max-w-sm mx-auto">
-            {["Mainland", "Island", "Saved"].map((tab) => (
-              <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${activeTab === tab ? "bg-white text-emerald-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                {tab}
+        <div className="flex items-center gap-3">
+            {/* Add Spot Button */}
+            <button 
+                onClick={() => setIsAddSpotOpen(true)}
+                className="hidden md:flex items-center gap-2 text-gray-600 font-bold text-sm hover:text-emerald-600 transition-colors px-3 py-2"
+            >
+                <PlusCircle className="h-4 w-4" />
+                Add Spot
+            </button>
+
+            {/* Roulette Button */}
+            <button 
+                onClick={() => setIsRouletteOpen(true)}
+                className="hidden md:flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-gray-800 transition-all active:scale-95 shadow-lg hover:shadow-xl"
+            >
+                <Dice5 className="h-4 w-4" />
+                Spin Roulette
+            </button>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-12">
+        
+        {/* --- HERO SECTION --- */}
+        <div className="mb-14 text-center md:text-left space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <h1 className="text-4xl md:text-6xl font-black text-gray-900 leading-[1.1] tracking-tight">
+                Discover <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-400">Lagos</span>
+                <br /> like a local.
+            </h1>
+            
+            {/* Mobile Add Spot Button */}
+            <button 
+                onClick={() => setIsAddSpotOpen(true)}
+                className="md:hidden mt-4 flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-full text-sm font-bold shadow-sm"
+            >
+                <PlusCircle className="h-4 w-4 text-emerald-600" />
+                Suggest a Spot
+            </button>
+          </div>
+
+          <p className="text-gray-500 text-lg md:text-xl max-w-lg mx-auto md:mx-0">
+            The curated guide to the best spots, hidden gems, and budget eats in the city.
+          </p>
+          
+          {/* Search Bar */}
+          <div className="relative max-w-lg mx-auto md:mx-0 group mt-8">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5 group-focus-within:text-emerald-500 transition-colors" />
+            <input
+              type="text"
+              placeholder="Search spots, vibes, or areas..."
+              className="w-full pl-14 pr-4 py-4 bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-base font-medium placeholder:text-gray-400"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex justify-center md:justify-start gap-3 overflow-x-auto pb-2 scrollbar-hide pt-4">
+            {["All", "Mainland", "Island"].map((type) => (
+              <button
+                key={type}
+                onClick={() => setMainFilter(type as any)}
+                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all border whitespace-nowrap ${
+                  mainFilter === type
+                    ? "bg-gray-900 text-white border-gray-900 shadow-lg shadow-gray-200 scale-105"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm"
+                }`}
+              >
+                {type}
               </button>
             ))}
           </div>
-
-          {/* SEARCH */}
-          <div className="relative max-w-lg mx-auto">
-            <Search className="absolute left-4 top-3 h-5 w-5 text-gray-400" />
-            <input type="text" placeholder="Search Lekki, Beach, or Date night..." className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl text-gray-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm placeholder:text-gray-400" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-          </div>
-        </div>
-      </header>
-
-      {/* --- CONTENT GRID --- */}
-      <div className="pt-48 px-4 max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-800">
-            {activeTab === "Saved" ? "Your Favorites" : `${activeTab} Collection`}
-          </h2>
-          <span className="text-xs font-medium px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
-            {filteredLocations.length} Found
-          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLocations.map((loc) => (
-            <div key={loc.id} className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-300 hover:-translate-y-1 relative">
-              <div className="relative h-56 w-full bg-gray-200">
+        {/* --- 2. LUXURY CARD GRID --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+          {filteredLocations.map((loc: any) => (
+            <Link 
+              href={`/restaurant/${loc.id}`} 
+              key={loc.id}
+              className="group relative flex flex-col bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-500 hover:-translate-y-2 border border-gray-100"
+            >
+              {/* Image Container */}
+              <div className="relative h-64 w-full overflow-hidden">
+                <img 
+                  src={loc.image} 
+                  alt={loc.name} 
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
-                {/* Lazy Load Image */}
-                <img src={loc.image} alt={loc.name} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                
-                <button onClick={(e) => { e.preventDefault(); toggleFavorite(loc.id); }} className="absolute top-3 right-3 p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/40 transition-all">
-                  <Heart className={`h-5 w-5 transition-colors ${favorites.includes(loc.id) ? "fill-red-500 text-red-500" : "text-white"}`} />
-                </button>
-
-                <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-lg">
-                  <span className="text-emerald-800 font-bold text-[10px] uppercase tracking-wider">{loc.category}</span>
+                {/* 🚦 TRAFFIC LIGHT PRICE BADGE */}
+                <div className="absolute top-4 right-4 z-10">
+                  <span className={`backdrop-blur-md px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-sm border ${getPriceColor(loc.price)}`}>
+                    {loc.price || "N/A"}
+                  </span>
                 </div>
               </div>
 
-              <div className="p-5">
-                <div className="mb-4">
-                  <div className="flex justify-between items-start">
-                    <h3 className="text-lg font-bold text-gray-900 leading-snug mb-1">{loc.name}</h3>
-                    {/* Traffic Light Price Badge */}
-                    <span className={`text-xs font-bold px-2 py-1 rounded-md border ${getPriceColor(loc.price)}`}>
-                        {loc.price}
-                    </span>
+              {/* Content Container */}
+              <div className="p-6 flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 leading-tight group-hover:text-emerald-600 transition-colors">
+                      {loc.name || "Unnamed Spot"}
+                    </h2>
+                    <p className="text-sm text-gray-500 font-medium flex items-center gap-1.5 mt-2">
+                      <MapPin className="h-3.5 w-3.5 text-emerald-500" /> 
+                      {loc.area || "Lagos"}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1 text-gray-500 mt-1">
-                    <MapPin className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="text-sm font-medium">{loc.area}</span>
-                  </div>
+                  <span className="px-3 py-1 rounded-lg bg-gray-50 text-gray-600 text-[10px] font-bold uppercase tracking-wide border border-gray-100">
+                    {loc.category || "General"}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <Link href={`/restaurant/${loc.id}`} className="flex items-center justify-center gap-2 py-3 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800 transition-colors">
-                    <Eye className="h-3.5 w-3.5" /> View
-                  </Link>
-                  <a href={loc.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors border border-gray-200">
-                    <Navigation className="h-3.5 w-3.5" /> Map
-                  </a>
+                {/* Description Snippet */}
+                <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">
+                  {loc.description || "Tap to explore the menu highlights and vibe check for this spot."}
+                </p>
+
+                {/* Hover CTA */}
+                <div className="mt-2 flex items-center text-emerald-600 text-sm font-bold opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                    View Details <ChevronRight className="h-4 w-4 ml-1" />
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
-        {/* EMPTY STATES */}
+        {/* Empty State */}
         {filteredLocations.length === 0 && (
           <div className="text-center py-20">
-            <div className="mx-auto h-20 w-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              {activeTab === "Saved" ? (
-                <Ghost className="h-10 w-10 text-gray-400" />
-              ) : (
-                <Search className="h-10 w-10 text-gray-400" />
-              )}
+            <div className="bg-white p-8 rounded-3xl inline-block shadow-sm border border-gray-100">
+                <p className="text-lg text-gray-900 font-bold mb-2">No spots found 😕</p>
+                <p className="text-gray-500">Try changing your search or filters.</p>
+                <button 
+                    onClick={() => {setSearch(""); setMainFilter("All");}}
+                    className="mt-4 text-emerald-600 font-bold text-sm hover:underline"
+                >
+                    Clear Filters
+                </button>
             </div>
-            <h3 className="text-lg font-bold text-gray-900">
-              {activeTab === "Saved" ? "No plans yet? 😢" : "No matches found"}
-            </h3>
-            <p className="text-gray-500 mt-1 max-w-xs mx-auto">
-              {activeTab === "Saved" 
-                ? "Start adding spots to your list so you don't end up eating noodles at home again." 
-                : "Try searching for 'Beach' or 'Ikeja' instead."}
-            </p>
           </div>
         )}
-        
-        {/* INSTALL APP PROMPT COMPONENT */}
-        <InstallPrompt />
       </div>
+
+      {/* --- ADD SPOT MODAL (FORMSPREE) --- */}
+      {isAddSpotOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl relative">
+                <button 
+                    onClick={() => setIsAddSpotOpen(false)}
+                    className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                >
+                    <X className="h-5 w-5 text-gray-500" />
+                </button>
+                
+                <h2 className="text-2xl font-black text-gray-900 mb-2">Suggest a Spot</h2>
+                <p className="text-gray-500 mb-6 text-sm">Know a hidden gem? Tell us about it.</p>
+
+                {/* FORM */}
+                <form action="https://formspree.io/f/mvzgekor" method="POST" className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Spot Name</label>
+                        <input name="name" type="text" required className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Area (e.g. Lekki, Yaba)</label>
+                        <input name="area" type="text" required className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Your Comment</label>
+                        <textarea name="message" rows={3} className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium"></textarea>
+                    </div>
+                    <button type="submit" className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition-colors">
+                        Submit Suggestion
+                    </button>
+                </form>
+            </div>
+        </div>
+      )}
+
+      {/* --- ROULETTE CONFIG & RESULT MODAL --- */}
+      {(isRouletteOpen || rouletteResult) && (
+         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-500">
+            <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 duration-300 relative border border-gray-100">
+               
+               <button 
+                 onClick={() => { setIsRouletteOpen(false); setIsSpinning(false); setRouletteResult(null); }}
+                 className="absolute top-4 right-4 p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-900 z-10"
+               >
+                 <X className="h-5 w-5" />
+               </button>
+
+               {/* STATE 1: CONFIGURATION (Pick filters) */}
+               {!isSpinning && !rouletteResult && (
+                 <div className="text-left space-y-6">
+                    <div className="text-center">
+                        <div className="inline-flex p-3 bg-emerald-100 rounded-2xl mb-3 text-emerald-600">
+                            <Dice5 className="h-8 w-8" />
+                        </div>
+                        <h2 className="text-2xl font-black text-gray-900">Configure Spin</h2>
+                        <p className="text-gray-500 text-sm">Narrow down your luck.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        {/* Area Filter */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Location</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {["All", "Mainland", "Island"].map(opt => (
+                                    <button 
+                                        key={opt}
+                                        onClick={() => setRouletteFilters({...rouletteFilters, type: opt})}
+                                        className={`py-2 text-sm font-bold rounded-lg border transition-all ${rouletteFilters.type === opt ? 'bg-gray-900 text-white border-gray-900 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Price Filter (NEW: With Ranges) */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Budget</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {priceOptions.map(opt => (
+                                    <button 
+                                        key={opt.value}
+                                        onClick={() => setRouletteFilters({...rouletteFilters, price: opt.value})}
+                                        className={`py-2 px-2 text-xs font-bold rounded-lg border transition-all ${
+                                            rouletteFilters.price === opt.value 
+                                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' 
+                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Vibe Filter (Dynamic from Data) */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Vibe</label>
+                            <select 
+                                value={rouletteFilters.vibe}
+                                onChange={(e) => setRouletteFilters({...rouletteFilters, vibe: e.target.value})}
+                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-700 focus:outline-none focus:border-emerald-500 appearance-none"
+                            >
+                                {uniqueCategories.map(cat => (
+                                    <option key={cat} value={cat}>
+                                        {cat === "Any" ? "Surprise Me (Any Vibe)" : cat}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={handleSpin}
+                        className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl shadow-xl hover:bg-emerald-600 hover:scale-[1.02] transition-all"
+                    >
+                        Spin Now 🎲
+                    </button>
+                 </div>
+               )}
+
+               {/* STATE 2: SPINNING */}
+               {isSpinning && (
+                 <div className="py-12 space-y-6">
+                   <div className="animate-spin text-6xl">🎲</div>
+                   <div>
+                       <h3 className="text-2xl font-black text-gray-900 mb-2">Finding a spot...</h3>
+                       <p className="text-gray-500 font-medium">Checking your filters.</p>
+                   </div>
+                 </div>
+               )}
+
+               {/* STATE 3: RESULT */}
+               {rouletteResult && !isSpinning && (
+                 <div className="space-y-6 pt-2">
+                    <div className="h-48 w-full rounded-2xl overflow-hidden relative shadow-md">
+                        <img src={rouletteResult?.image} className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                        <div className={`absolute bottom-3 left-3 font-bold text-sm backdrop-blur-md px-3 py-1 rounded-full border ${getPriceColor(rouletteResult?.price || "")}`}>
+                            {rouletteResult?.price}
+                        </div>
+                    </div>
+                    
+                    <div className="text-left px-1">
+                        <span className="text-emerald-600 font-bold text-xs tracking-widest uppercase mb-1 block">Fate Chose:</span>
+                        <h2 className="text-3xl font-black text-gray-900 mb-2 leading-tight">{rouletteResult?.name}</h2>
+                        <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">
+                            {rouletteResult?.description}
+                        </p>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => setRouletteResult(null)}
+                            className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                        >
+                            Spin Again
+                        </button>
+                        <Link 
+                            href={`/restaurant/${rouletteResult?.id}`}
+                            className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition-colors block"
+                        >
+                            View Details
+                        </Link>
+                    </div>
+                 </div>
+               )}
+            </div>
+         </div>
+      )}
+
+      {/* Mobile FAB (Roulette) */}
+      <button 
+        onClick={() => setIsRouletteOpen(true)}
+        className="md:hidden fixed bottom-6 right-6 h-16 w-16 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-40 border-4 border-white/20"
+      >
+        <Dice5 className="h-7 w-7" />
+      </button>
+
     </main>
   );
 }

@@ -1,3 +1,15 @@
+export interface Location {
+  id: number;
+  name: string;
+  type: "Mainland" | "Island";
+  area: string;
+  price: string;
+  image: string;
+  mapUrl: string;
+  category: string;
+  description: string;
+  menuHighlights: string[];
+}
 export const locations = [
   {
     id: 1,
@@ -319,7 +331,7 @@ export const locations = [
     price: "₦15,000",
     image: "/images/godaif.jpg",
     mapUrl: "https://maps.app.goo.gl/oQzvWxSyuTnzYQvT8",
-    category: "Chill",
+    category: "Hidden Gem",
     description: "A massive garden space in Ikoyi with a play area for kids and a serene atmosphere for adults.",
     menuHighlights: ["Pizza", "Greek Salad", "Ginger Lemonade"],
   },
@@ -355,7 +367,7 @@ export const locations = [
     price: "₦6,000",
     image: "/images/so-fresh.jpg",
     mapUrl: "https://maps.app.goo.gl/kDW68dKEQv8wXWfF8",
-    category: "Health",
+    category: "Chill",
     description: "The healthiest spot on the list. Perfect for a quick lunch when you want salads, juices, or parfaits.",
     menuHighlights: ["Chicken Caesar Salad", "Green Smoothie", "Fruit Parfait"],
   },
