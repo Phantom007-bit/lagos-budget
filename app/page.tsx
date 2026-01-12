@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { locations } from "./data"; 
-import { Search, MapPin, Dice5, X, ChevronRight, PlusCircle, Filter, DollarSign, PartyPopper } from "lucide-react";
+import { Search, MapPin, Dice5, X, ChevronRight, PlusCircle, Filter, DollarSign, PartyPopper, Download } from "lucide-react";
 
 export default function Home() {
   const [search, setSearch] = useState("");
@@ -13,6 +13,9 @@ export default function Home() {
   const [isAddSpotOpen, setIsAddSpotOpen] = useState(false);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   
+  // --- INSTALL APP STATE ---
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+
   // --- ROULETTE STATES ---
   const [rouletteResult, setRouletteResult] = useState<any | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -21,6 +24,35 @@ export default function Home() {
     price: "Any",
     vibe: "Any"
   });
+
+  // --- INSTALL PROMPT LISTENER ---
+  useEffect(() => {
+    const handler = (e: any) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setInstallPrompt(e);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstallClick = () => {
+    if (!installPrompt) return;
+    // Show the install prompt
+    installPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    installPrompt.userChoice.then((choiceResult: any) => {
+      if (choiceResult.outcome === "accepted") {
+        console.log("User accepted the install prompt");
+      } else {
+        console.log("User dismissed the install prompt");
+      }
+      setInstallPrompt(null);
+    });
+  };
 
   // --- DYNAMIC CATEGORY LIST ---
   const uniqueCategories = useMemo(() => {
@@ -112,6 +144,17 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-3">
+            {/* Install App Button (Only shows if browser allows it) */}
+            {installPrompt && (
+                <button 
+                    onClick={handleInstallClick}
+                    className="flex items-center gap-2 bg-emerald-100 text-emerald-700 font-bold text-xs md:text-sm hover:bg-emerald-200 transition-colors px-3 py-2 rounded-lg"
+                >
+                    <Download className="h-4 w-4" />
+                    <span className="hidden md:inline">Install App</span>
+                </button>
+            )}
+
             {/* Add Spot Button */}
             <button 
                 onClick={() => setIsAddSpotOpen(true)}
@@ -142,14 +185,28 @@ export default function Home() {
                 <br /> like a local.
             </h1>
             
-            {/* Mobile Add Spot Button */}
-            <button 
-                onClick={() => setIsAddSpotOpen(true)}
-                className="md:hidden mt-4 flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-full text-sm font-bold shadow-sm"
-            >
-                <PlusCircle className="h-4 w-4 text-emerald-600" />
-                Suggest a Spot
-            </button>
+            {/* Mobile Actions Row */}
+            <div className="flex gap-3 justify-center md:hidden mt-4">
+                {/* Mobile Add Spot */}
+                <button 
+                    onClick={() => setIsAddSpotOpen(true)}
+                    className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-full text-sm font-bold shadow-sm"
+                >
+                    <PlusCircle className="h-4 w-4 text-emerald-600" />
+                    Suggest
+                </button>
+                
+                {/* Mobile Install Button */}
+                {installPrompt && (
+                    <button 
+                        onClick={handleInstallClick}
+                        className="flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full text-sm font-bold text-emerald-800 shadow-sm"
+                    >
+                        <Download className="h-4 w-4" />
+                        Install
+                    </button>
+                )}
+            </div>
           </div>
 
           <p className="text-gray-500 text-lg md:text-xl max-w-lg mx-auto md:mx-0">
@@ -162,7 +219,6 @@ export default function Home() {
             <input
               type="text"
               placeholder="Search spots, vibes, or areas..."
-              // 👇 I added "text-gray-900" here to fix invisible text on mobile
               className="w-full pl-14 pr-4 py-4 bg-white text-gray-900 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-base font-medium placeholder:text-gray-400"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -278,17 +334,14 @@ export default function Home() {
                 <form action="https://formspree.io/f/mvzgekor" method="POST" className="space-y-4">
                     <div>
                         <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Spot Name</label>
-                        {/* Added text-gray-900 to fix invisible text on mobile */}
                         <input name="name" type="text" required className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium placeholder:text-gray-400" placeholder="e.g. Danfo Bistro" />
                     </div>
                     <div>
                         <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Area (e.g. Lekki, Yaba)</label>
-                        {/* Added text-gray-900 */}
                         <input name="area" type="text" required className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium placeholder:text-gray-400" placeholder="e.g. Ikoyi" />
                     </div>
                     <div>
                         <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Your Comment</label>
-                        {/* Added text-gray-900 */}
                         <textarea name="message" rows={3} className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium placeholder:text-gray-400" placeholder="Best pasta in Lagos..."></textarea>
                     </div>
                     <button type="submit" className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition-colors">
@@ -365,7 +418,6 @@ export default function Home() {
                             <select 
                                 value={rouletteFilters.vibe}
                                 onChange={(e) => setRouletteFilters({...rouletteFilters, vibe: e.target.value})}
-                                // Added text-gray-900 to fix invisible dropdown text on mobile
                                 className="w-full p-3 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-emerald-500 appearance-none"
                             >
                                 {uniqueCategories.map(cat => (
