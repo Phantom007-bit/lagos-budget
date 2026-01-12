@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google"; 
+import { Analytics } from "@vercel/analytics/react"; // 👈 1. Import this
 import "./globals.css";
 
-// 1. Configure the Premium Font
+// Configure the Premium Font
 const font = Plus_Jakarta_Sans({ 
   subsets: ["latin"], 
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-jakarta"
 });
 
-// 2. Metadata for SEO and Mobile Icons
+// Metadata for SEO and Mobile Icons
 export const metadata: Metadata = {
   title: "GidiSpots",
   description: "The ultimate guide to Lagos spots.",
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
   },
 };
 
-// 3. The Root Layout Component
+// The Root Layout Component
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,6 +37,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${font.className} antialiased bg-gray-50 text-slate-900`}>
         {children}
+        <Analytics /> 
       </body>
     </html>
   );
