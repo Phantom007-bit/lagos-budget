@@ -3,17 +3,25 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { locations } from "./data"; 
-import { Search, MapPin, Dice5, X, ChevronRight, PlusCircle, Filter, DollarSign, PartyPopper, Download } from "lucide-react";
+import { Search, MapPin, Dice5, X, ChevronRight, PlusCircle, Filter, DollarSign, PartyPopper, Download, Heart, Bell, CheckCircle } from "lucide-react";
 
 export default function Home() {
   const [search, setSearch] = useState("");
-  const [mainFilter, setMainFilter] = useState<"All" | "Mainland" | "Island">("All");
+  // Added "Saved" to the filter types
+  const [mainFilter, setMainFilter] = useState<"All" | "Mainland" | "Island" | "Saved">("All");
+
+  // --- SAVED SPOTS STATE (LocalStorage) ---
+  const [savedIds, setSavedIds] = useState<number[]>([]);
+  const [isSavedLoaded, setIsSavedLoaded] = useState(false);
+
+  // --- NOTIFICATION STATE ---
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(true);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // --- MODAL STATES ---
   const [isAddSpotOpen, setIsAddSpotOpen] = useState(false);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
-  
-  // --- INSTALL APP STATE ---
   const [installPrompt, setInstallPrompt] = useState<any>(null);
 
   // --- ROULETTE STATES ---
@@ -25,31 +33,58 @@ export default function Home() {
     vibe: "Any"
   });
 
-  // --- INSTALL PROMPT LISTENER ---
+  // --- DUMMY NOTIFICATIONS DATA ---
+  const notifications = [
+    { id: 1, text: "🎉 Roulette V2 is live! Try the new filters.", time: "2h ago" },
+    { id: 2, text: "🔥 'Danfo Bistro' is trending this week.", time: "5h ago" },
+    { id: 3, text: "👋 Welcome to GidiSpots Premium.", time: "1d ago" }
+  ];
+
+  // --- LOAD SAVED SPOTS ON MOUNT ---
   useEffect(() => {
+    const saved = localStorage.getItem("gidi_saved_spots");
+    if (saved) {
+      setSavedIds(JSON.parse(saved));
+    }
+    setIsSavedLoaded(true);
+
+    // Install Prompt Listener
     const handler = (e: any) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setInstallPrompt(e);
     };
-
     window.addEventListener("beforeinstallprompt", handler);
-
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
+  // --- SAVE TOGGLE LOGIC ---
+  const toggleSave = (e: React.MouseEvent, id: number) => {
+    e.preventDefault(); // Stop link click
+    e.stopPropagation();
+
+    let newSaved;
+    if (savedIds.includes(id)) {
+      newSaved = savedIds.filter(sid => sid !== id);
+      showToast("Removed from favorites 💔");
+    } else {
+      newSaved = [...savedIds, id];
+      showToast("Added to favorites ❤️");
+    }
+    setSavedIds(newSaved);
+    localStorage.setItem("gidi_saved_spots", JSON.stringify(newSaved));
+  };
+
+  // --- TOAST HELPER ---
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
+
+  // --- INSTALL APP ---
   const handleInstallClick = () => {
     if (!installPrompt) return;
-    // Show the install prompt
     installPrompt.prompt();
-    // Wait for the user to respond to the prompt
     installPrompt.userChoice.then((choiceResult: any) => {
-      if (choiceResult.outcome === "accepted") {
-        console.log("User accepted the install prompt");
-      } else {
-        console.log("User dismissed the install prompt");
-      }
       setInstallPrompt(null);
     });
   };
@@ -61,17 +96,16 @@ export default function Home() {
     return ["Any", ...unique.sort()];
   }, []);
 
-  // --- HELPER: Traffic Light Logic 🚦 ---
+  // --- PRICE HELPERS ---
   const getPriceColor = (priceString: string) => {
     if (!priceString) return "bg-gray-100 text-gray-800 border-gray-200";
     const price = parseInt(priceString.toString().replace(/[^0-9]/g, ""));
     if (isNaN(price)) return "bg-gray-100 text-gray-800 border-gray-200"; 
-    if (price <= 5000) return "bg-emerald-100 text-emerald-800 border-emerald-200"; // 🟢 Budget
-    if (price <= 20000) return "bg-orange-100 text-orange-800 border-orange-200";   // 🟠 Mid
-    return "bg-rose-100 text-rose-800 border-rose-200";                              // 🔴 Splurge
+    if (price <= 5000) return "bg-emerald-100 text-emerald-800 border-emerald-200"; 
+    if (price <= 20000) return "bg-orange-100 text-orange-800 border-orange-200";   
+    return "bg-rose-100 text-rose-800 border-rose-200";                              
   };
 
-  // --- HELPER: Get Price Category ---
   const getPriceCategory = (priceString: string) => {
     const price = parseInt(priceString.toString().replace(/[^0-9]/g, ""));
     if (price <= 5000) return "Budget";
@@ -79,7 +113,7 @@ export default function Home() {
     return "Splurge";
   };
 
-  // --- MAIN PAGE FILTER LOGIC ---
+  // --- FILTER LOGIC (Updated for Saved) ---
   const filteredLocations = locations.filter((loc: any) => {
     const name = loc?.name || "";
     const category = loc?.category || "";
@@ -90,31 +124,34 @@ export default function Home() {
       name.toLowerCase().includes(searchTerm) ||
       category.toLowerCase().includes(searchTerm);
 
-    const matchesFilter = mainFilter === "All" || type === mainFilter;
+    let matchesFilter = true;
+    if (mainFilter === "Saved") {
+        matchesFilter = savedIds.includes(loc.id);
+    } else if (mainFilter !== "All") {
+        matchesFilter = type === mainFilter;
+    }
     
     return matchesSearch && matchesFilter;
   });
 
-  // --- ROULETTE SPIN LOGIC 🎰 ---
+  // --- ROULETTE SPIN ---
   const handleSpin = () => {
     const candidates = locations.filter((loc: any) => {
         const matchesType = rouletteFilters.type === "All" || loc.type === rouletteFilters.type;
-        
         const priceCat = getPriceCategory(loc.price || "0");
         const matchesPrice = rouletteFilters.price === "Any" || priceCat === rouletteFilters.price;
-        
         const matchesVibe = rouletteFilters.vibe === "Any" || loc.category === rouletteFilters.vibe;
-
         return matchesType && matchesPrice && matchesVibe;
     });
 
     if (candidates.length === 0) {
-        alert("No spots found with those exact filters! Try selecting 'Any' for one of the options.");
+        showToast("No spots found with those filters!");
         return;
     }
 
     setIsSpinning(true);
     setRouletteResult(null);
+    setIsRouletteOpen(true); // Ensure modal is open
     
     setTimeout(() => {
       const random = candidates[Math.floor(Math.random() * candidates.length)];
@@ -123,7 +160,6 @@ export default function Home() {
     }, 1500);
   };
 
-  // --- ROULETTE OPTIONS ---
   const priceOptions = [
     { label: "Any Price", value: "Any" },
     { label: "Budget (₦0 - 5k)", value: "Budget" },
@@ -132,7 +168,7 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-20 selection:bg-emerald-100 selection:text-emerald-900">
+    <main className="min-h-screen bg-gray-50 pb-20 selection:bg-emerald-100 selection:text-emerald-900 font-sans">
       
       {/* --- 1. PREMIUM GLASS NAVBAR --- */}
       <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-4 flex justify-between items-center transition-all">
@@ -143,17 +179,41 @@ export default function Home() {
            <span className="font-bold text-xl tracking-tight text-gray-900">GidiSpots</span>
         </div>
 
-        <div className="flex items-center gap-3">
-            {/* Install App Button (Only shows if browser allows it) */}
+        <div className="flex items-center gap-2 md:gap-3">
+            {/* Install Button (Hidden unless prompt available) */}
             {installPrompt && (
-                <button 
-                    onClick={handleInstallClick}
-                    className="flex items-center gap-2 bg-emerald-100 text-emerald-700 font-bold text-xs md:text-sm hover:bg-emerald-200 transition-colors px-3 py-2 rounded-lg"
-                >
-                    <Download className="h-4 w-4" />
-                    <span className="hidden md:inline">Install App</span>
+                <button onClick={handleInstallClick} className="hidden md:flex items-center gap-2 bg-emerald-100 text-emerald-700 font-bold text-xs hover:bg-emerald-200 transition-colors px-3 py-2 rounded-lg">
+                    <Download className="h-4 w-4" /> Install
                 </button>
             )}
+
+            {/* Notification Bell */}
+            <div className="relative">
+                <button 
+                    onClick={() => {setIsNotifOpen(!isNotifOpen); setHasUnread(false);}}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors relative"
+                >
+                    <Bell className="h-5 w-5" />
+                    {hasUnread && <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-white"></span>}
+                </button>
+
+                {/* Notification Dropdown */}
+                {isNotifOpen && (
+                    <div className="absolute top-12 right-0 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 animate-in slide-in-from-top-2 duration-200">
+                        <div className="px-3 py-2 border-b border-gray-50">
+                            <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto">
+                            {notifications.map(n => (
+                                <div key={n.id} className="p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-default">
+                                    <p className="text-sm text-gray-800 font-medium leading-tight">{n.text}</p>
+                                    <span className="text-[10px] text-gray-400 mt-1 block uppercase font-bold">{n.time}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Add Spot Button */}
             <button 
@@ -170,10 +230,18 @@ export default function Home() {
                 className="hidden md:flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-gray-800 transition-all active:scale-95 shadow-lg hover:shadow-xl"
             >
                 <Dice5 className="h-4 w-4" />
-                Spin Roulette
+                Spin
             </button>
         </div>
       </nav>
+
+      {/* --- TOAST NOTIFICATION (Fixed Bottom) --- */}
+      {toastMsg && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
+            <CheckCircle className="h-5 w-5 text-emerald-400" />
+            <span className="font-bold text-sm">{toastMsg}</span>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-12">
         
@@ -185,25 +253,14 @@ export default function Home() {
                 <br /> like a local.
             </h1>
             
-            {/* Mobile Actions Row */}
+            {/* Mobile Actions */}
             <div className="flex gap-3 justify-center md:hidden mt-4">
-                {/* Mobile Add Spot */}
-                <button 
-                    onClick={() => setIsAddSpotOpen(true)}
-                    className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-full text-sm font-bold shadow-sm"
-                >
-                    <PlusCircle className="h-4 w-4 text-emerald-600" />
-                    Suggest
+                <button onClick={() => setIsAddSpotOpen(true)} className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-full text-sm font-bold shadow-sm">
+                    <PlusCircle className="h-4 w-4 text-emerald-600" /> Suggest
                 </button>
-                
-                {/* Mobile Install Button */}
                 {installPrompt && (
-                    <button 
-                        onClick={handleInstallClick}
-                        className="flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full text-sm font-bold text-emerald-800 shadow-sm"
-                    >
-                        <Download className="h-4 w-4" />
-                        Install
+                    <button onClick={handleInstallClick} className="flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full text-sm font-bold text-emerald-800 shadow-sm">
+                        <Download className="h-4 w-4" /> Install
                     </button>
                 )}
             </div>
@@ -227,16 +284,17 @@ export default function Home() {
 
           {/* Filter Pills */}
           <div className="flex justify-center md:justify-start gap-3 overflow-x-auto pb-2 scrollbar-hide pt-4">
-            {["All", "Mainland", "Island"].map((type) => (
+            {["All", "Mainland", "Island", "Saved"].map((type) => (
               <button
                 key={type}
                 onClick={() => setMainFilter(type as any)}
-                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all border whitespace-nowrap ${
+                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all border whitespace-nowrap flex items-center gap-2 ${
                   mainFilter === type
                     ? "bg-gray-900 text-white border-gray-900 shadow-lg shadow-gray-200 scale-105"
                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm"
                 }`}
               >
+                {type === "Saved" && <Heart className={`h-3 w-3 ${mainFilter === "Saved" ? "fill-white" : ""}`} />}
                 {type}
               </button>
             ))}
@@ -260,12 +318,22 @@ export default function Home() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
-                {/* 🚦 TRAFFIC LIGHT PRICE BADGE */}
-                <div className="absolute top-4 right-4 z-10">
+                {/* 🚦 Price Badge */}
+                <div className="absolute top-4 left-4 z-10">
                   <span className={`backdrop-blur-md px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-sm border ${getPriceColor(loc.price)}`}>
                     {loc.price || "N/A"}
                   </span>
                 </div>
+
+                {/* ❤️ SAVE BUTTON */}
+                <button
+                    onClick={(e) => toggleSave(e, loc.id)}
+                    className="absolute top-4 right-4 z-20 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:scale-110 active:scale-90 transition-all group/heart"
+                >
+                    <Heart 
+                        className={`h-5 w-5 transition-colors ${savedIds.includes(loc.id) ? "fill-red-500 text-red-500" : "text-gray-400 group-hover/heart:text-red-500"}`} 
+                    />
+                </button>
               </div>
 
               {/* Content Container */}
@@ -285,12 +353,10 @@ export default function Home() {
                   </span>
                 </div>
 
-                {/* Description Snippet */}
                 <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">
                   {loc.description || "Tap to explore the menu highlights and vibe check for this spot."}
                 </p>
 
-                {/* Hover CTA */}
                 <div className="mt-2 flex items-center text-emerald-600 text-sm font-bold opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                     View Details <ChevronRight className="h-4 w-4 ml-1" />
                 </div>
@@ -304,7 +370,9 @@ export default function Home() {
           <div className="text-center py-20">
             <div className="bg-white p-8 rounded-3xl inline-block shadow-sm border border-gray-100">
                 <p className="text-lg text-gray-900 font-bold mb-2">No spots found 😕</p>
-                <p className="text-gray-500">Try changing your search or filters.</p>
+                <p className="text-gray-500">
+                    {mainFilter === "Saved" ? "You haven't saved any spots yet." : "Try changing your search or filters."}
+                </p>
                 <button 
                     onClick={() => {setSearch(""); setMainFilter("All");}}
                     className="mt-4 text-emerald-600 font-bold text-sm hover:underline"
@@ -330,8 +398,13 @@ export default function Home() {
                 <h2 className="text-2xl font-black text-gray-900 mb-2">Suggest a Spot</h2>
                 <p className="text-gray-500 mb-6 text-sm">Know a hidden gem? Tell us about it.</p>
 
-                {/* 👇 REPLACE 'YOUR_FORM_ID' WITH YOUR REAL FORMSPREE ID 👇 */}
-                <form action="https://formspree.io/f/mvzgekor" method="POST" className="space-y-4">
+                {/*  FORMSPREE ID  */}
+                <form 
+                    action="https://formspree.io/f/mvzgekor" 
+                    method="POST" 
+                    className="space-y-4"
+                    onSubmit={() => { setIsAddSpotOpen(false); showToast("Suggestion sent! 🚀"); }}
+                >
                     <div>
                         <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Spot Name</label>
                         <input name="name" type="text" required className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium placeholder:text-gray-400" placeholder="e.g. Danfo Bistro" />
@@ -412,7 +485,7 @@ export default function Home() {
                             </div>
                         </div>
                         
-                        {/* Vibe Filter (Dynamic from Data) */}
+                        {/* Vibe Filter */}
                         <div>
                             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Vibe</label>
                             <select 
