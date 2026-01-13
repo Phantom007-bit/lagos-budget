@@ -390,6 +390,7 @@ export default function Home() {
       </div>
 
       {/* --- ADD SPOT MODAL (FORMSPREE) --- */}
+      
       {isAddSpotOpen && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl relative">
@@ -403,12 +404,39 @@ export default function Home() {
                 <h2 className="text-2xl font-black text-gray-900 mb-2">Suggest a Spot</h2>
                 <p className="text-gray-500 mb-6 text-sm">Know a hidden gem? Tell us about it.</p>
 
-                {/* FORMSPREE ID  */}
+                {/*FORM */}
                 <form 
-                    action="https://formspree.io/f/mvzgekor" 
-                    method="POST" 
+                    onSubmit={async (e) => {
+                        e.preventDefault(); // Stop the page from reloading
+                        const formData = new FormData(e.currentTarget);
+                        
+                        // Show immediate feedback
+                        const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement;
+                        if(submitBtn) { submitBtn.innerText = "Sending..."; submitBtn.disabled = true; }
+
+                        try {
+                            // 👇 REPLACE WITH YOUR ACTUAL FORMSPREE ID
+                            const response = await fetch("https://formspree.io/f/mvzgekor", {
+                                method: "POST",
+                                body: formData,
+                                headers: {
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            
+                            if (response.ok) {
+                                setIsAddSpotOpen(false);
+                                showToast("Suggestion sent successfully! 🚀");
+                            } else {
+                                alert("There was a problem sending your form. Please check your Formspree settings.");
+                                if(submitBtn) { submitBtn.innerText = "Try Again"; submitBtn.disabled = false; }
+                            }
+                        } catch (error) {
+                            alert("Error connecting to server.");
+                            if(submitBtn) { submitBtn.innerText = "Try Again"; submitBtn.disabled = false; }
+                        }
+                    }} 
                     className="space-y-4"
-                    onSubmit={() => { setIsAddSpotOpen(false); showToast("Suggestion sent! 🚀"); }}
                 >
                     <div>
                         <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Spot Name</label>
@@ -422,13 +450,14 @@ export default function Home() {
                         <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Your Comment</label>
                         <textarea name="message" rows={3} className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-500 font-medium placeholder:text-gray-400" placeholder="Best pasta in Lagos..."></textarea>
                     </div>
-                    <button type="submit" className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition-colors">
+                    <button id="submit-btn" type="submit" className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         Submit Suggestion
                     </button>
                 </form>
             </div>
         </div>
       )}
+      
 
       {/* --- ROULETTE CONFIG & RESULT MODAL --- */}
       {(isRouletteOpen || rouletteResult) && (
