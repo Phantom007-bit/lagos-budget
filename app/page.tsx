@@ -106,8 +106,8 @@ export default function Home() {
     if (!priceString) return "bg-gray-100 text-gray-800 border-gray-200";
     const price = parseInt(priceString.toString().replace(/[^0-9]/g, ""));
     if (isNaN(price)) return "bg-gray-100 text-gray-800 border-gray-200"; 
-    if (price <= 5000) return "bg-emerald-100 text-emerald-800 border-emerald-200"; 
-    if (price <= 20000) return "bg-orange-100 text-orange-800 border-orange-200";   
+    if (price <= 10000) return "bg-emerald-100 text-emerald-800 border-emerald-200"; 
+    if (price <= 30000) return "bg-orange-100 text-orange-800 border-orange-200";   
     return "bg-rose-100 text-rose-800 border-rose-200";                              
   };
 
@@ -168,7 +168,7 @@ export default function Home() {
   const priceOptions = [
     { label: "Any Price", value: "Any" },
     { label: "Budget (₦0 - 10k)", value: "Budget" },
-    { label: "Mid (₦5k - 30k)", value: "Mid" },
+    { label: "Mid (₦10k - 30k)", value: "Mid" },
     { label: "Splurge (₦30k+)", value: "Splurge" }
   ];
 
@@ -415,7 +415,7 @@ export default function Home() {
                         if(submitBtn) { submitBtn.innerText = "Sending..."; submitBtn.disabled = true; }
 
                         try {
-                            // 👇 REPLACE WITH YOUR ACTUAL FORMSPREE ID
+                            // FORM SPREE ID 
                             const response = await fetch("https://formspree.io/f/mvzgekor", {
                                 method: "POST",
                                 body: formData,
