@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google"; 
-import { Analytics } from "@vercel/analytics/react"; // 👈 1. Import this
+import { Analytics } from "@vercel/analytics/react"; // 
 import "./globals.css";
 
 // Configure the Premium Font

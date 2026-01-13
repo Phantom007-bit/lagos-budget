@@ -7,7 +7,6 @@ import { Search, MapPin, Dice5, X, ChevronRight, PlusCircle, Filter, DollarSign,
 
 export default function Home() {
   const [search, setSearch] = useState("");
-  // Added "Saved" to the filter types
   const [mainFilter, setMainFilter] = useState<"All" | "Mainland" | "Island" | "Saved">("All");
 
   // --- SAVED SPOTS STATE (LocalStorage) ---
@@ -19,7 +18,7 @@ export default function Home() {
   const [hasUnread, setHasUnread] = useState(true);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // --- MODAL STATES ---
+  // --- MODAL & INSTALL STATES ---
   const [isAddSpotOpen, setIsAddSpotOpen] = useState(false);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -40,26 +39,41 @@ export default function Home() {
     { id: 3, text: "👋 Welcome to GidiSpots Premium.", time: "1d ago" }
   ];
 
-  // --- LOAD SAVED SPOTS ON MOUNT ---
+  // --- COMBINED USE EFFECT (Run Once on Mount) ---
   useEffect(() => {
+    // 1. Load Saved Spots from LocalStorage
     const saved = localStorage.getItem("gidi_saved_spots");
     if (saved) {
       setSavedIds(JSON.parse(saved));
     }
     setIsSavedLoaded(true);
 
-    // Install Prompt Listener
+    // 2. Install Prompt Listener
     const handler = (e: any) => {
-      e.preventDefault();
-      setInstallPrompt(e);
+      e.preventDefault(); // Prevent mini-infobar
+      setInstallPrompt(e); // Stash event
+      console.log("Install prompt event captured");
     };
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
 
-  // --- SAVE TOGGLE LOGIC ---
+    // Cleanup listener on unmount
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []); 
+
+  // --- HANDLERS ---
+  
+  // 1. Install App Handler
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    console.log(`User response: ${outcome}`);
+    setInstallPrompt(null);
+  };
+
+  // 2. Toggle Save Handler
   const toggleSave = (e: React.MouseEvent, id: number) => {
-    e.preventDefault(); // Stop link click
+    e.preventDefault(); 
     e.stopPropagation();
 
     let newSaved;
@@ -74,19 +88,10 @@ export default function Home() {
     localStorage.setItem("gidi_saved_spots", JSON.stringify(newSaved));
   };
 
-  // --- TOAST HELPER ---
+  // 3. Toast Helper
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 3000);
-  };
-
-  // --- INSTALL APP ---
-  const handleInstallClick = () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    installPrompt.userChoice.then((choiceResult: any) => {
-      setInstallPrompt(null);
-    });
   };
 
   // --- DYNAMIC CATEGORY LIST ---
@@ -108,12 +113,12 @@ export default function Home() {
 
   const getPriceCategory = (priceString: string) => {
     const price = parseInt(priceString.toString().replace(/[^0-9]/g, ""));
-    if (price <= 5000) return "Budget";
-    if (price <= 20000) return "Mid";
+    if (price <= 10000) return "Budget";
+    if (price <= 30000) return "Mid";
     return "Splurge";
   };
 
-  // --- FILTER LOGIC (Updated for Saved) ---
+  // --- FILTER LOGIC ---
   const filteredLocations = locations.filter((loc: any) => {
     const name = loc?.name || "";
     const category = loc?.category || "";
@@ -151,7 +156,7 @@ export default function Home() {
 
     setIsSpinning(true);
     setRouletteResult(null);
-    setIsRouletteOpen(true); // Ensure modal is open
+    setIsRouletteOpen(true); 
     
     setTimeout(() => {
       const random = candidates[Math.floor(Math.random() * candidates.length)];
@@ -162,9 +167,9 @@ export default function Home() {
 
   const priceOptions = [
     { label: "Any Price", value: "Any" },
-    { label: "Budget (₦0 - 5k)", value: "Budget" },
-    { label: "Mid (₦5k - 20k)", value: "Mid" },
-    { label: "Splurge (₦20k+)", value: "Splurge" }
+    { label: "Budget (₦0 - 10k)", value: "Budget" },
+    { label: "Mid (₦5k - 30k)", value: "Mid" },
+    { label: "Splurge (₦30k+)", value: "Splurge" }
   ];
 
   return (
@@ -398,7 +403,7 @@ export default function Home() {
                 <h2 className="text-2xl font-black text-gray-900 mb-2">Suggest a Spot</h2>
                 <p className="text-gray-500 mb-6 text-sm">Know a hidden gem? Tell us about it.</p>
 
-                {/*  FORMSPREE ID  */}
+                {/* FORMSPREE ID  */}
                 <form 
                     action="https://formspree.io/f/mvzgekor" 
                     method="POST" 
