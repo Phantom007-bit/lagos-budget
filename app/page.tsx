@@ -178,9 +178,12 @@ export default function Home() {
       {/* --- 1. PREMIUM GLASS NAVBAR --- */}
       <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-4 flex justify-between items-center transition-all">
         <div className="flex items-center gap-3">
-           <div className="h-9 w-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-emerald-200 shadow-lg transform rotate-3">
-             G
-           </div>
+          
+<img 
+  src="/logo.png" 
+  alt="GidiSpots Logo" 
+  className="h-10 w-10 object-contain rounded-lg" 
+/>
            <span className="font-bold text-xl tracking-tight text-gray-900">GidiSpots</span>
         </div>
 
@@ -323,14 +326,14 @@ export default function Home() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
-                {/* 🚦 Price Badge */}
+                {/* Price Badge */}
                 <div className="absolute top-4 left-4 z-10">
                   <span className={`backdrop-blur-md px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-sm border ${getPriceColor(loc.price)}`}>
                     {loc.price || "N/A"}
                   </span>
                 </div>
 
-                {/* ❤️ SAVE BUTTON */}
+                {/* SAVE BUTTON */}
                 <button
                     onClick={(e) => toggleSave(e, loc.id)}
                     className="absolute top-4 right-4 z-20 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:scale-110 active:scale-90 transition-all group/heart"
