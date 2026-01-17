@@ -8,6 +8,9 @@ import { Search, MapPin, Dice5, X, ChevronRight, PlusCircle, Filter, DollarSign,
 export default function Home() {
   const [search, setSearch] = useState("");
   const [mainFilter, setMainFilter] = useState<"All" | "Mainland" | "Island" | "Saved">("All");
+  const [selectedArea, setSelectedArea] = useState<string>("All");
+  const [selectedPrice, setSelectedPrice] = useState<string>("All");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // --- SAVED SPOTS STATE (LocalStorage) ---
   const [savedIds, setSavedIds] = useState<number[]>([]);
@@ -22,14 +25,19 @@ export default function Home() {
   const [isAddSpotOpen, setIsAddSpotOpen] = useState(false);
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isIOSOpen, setIsIOSOpen] = useState(false);
 
   // --- ROULETTE STATES ---
   const [rouletteResult, setRouletteResult] = useState<any | null>(null);
+  const [rouletteMatches, setRouletteMatches] = useState<any[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [isSimilarSpotsOpen, setIsSimilarSpotsOpen] = useState(false);
   const [rouletteFilters, setRouletteFilters] = useState({
     type: "All",
     price: "Any",
-    vibe: "Any"
+    vibe: "Any",
+    area: "All"
   });
 
   // --- DUMMY NOTIFICATIONS DATA ---
@@ -48,7 +56,12 @@ export default function Home() {
     }
     setIsSavedLoaded(true);
 
-    // 2. Install Prompt Listener
+    // 2. Detect iOS
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(isIOSDevice);
+
+    // 3. Install Prompt Listener (Android only)
     const handler = (e: any) => {
       e.preventDefault(); // Prevent mini-infobar
       setInstallPrompt(e); // Stash event
@@ -58,17 +71,38 @@ export default function Home() {
 
     // Cleanup listener on unmount
     return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []); 
+  }, []);
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (isFilterOpen && !target.closest('.filter-dropdown-container')) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    if (isFilterOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isFilterOpen]); 
 
   // --- HANDLERS ---
   
   // 1. Install App Handler
   const handleInstallClick = async () => {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    console.log(`User response: ${outcome}`);
-    setInstallPrompt(null);
+    if (isIOS) {
+      setIsIOSOpen(true);
+    } else if (installPrompt) {
+      await installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      console.log(`User response: ${outcome}`);
+      setInstallPrompt(null);
+    }
   };
 
   // 2. Toggle Save Handler
@@ -101,6 +135,13 @@ export default function Home() {
     return ["Any", ...unique.sort()];
   }, []);
 
+  // --- DYNAMIC AREA LIST ---
+  const uniqueAreas = useMemo(() => {
+    const allAreas = locations.map((loc: any) => loc.area || "");
+    const unique = Array.from(new Set(allAreas)).filter(area => area !== "");
+    return ["All", ...unique.sort()];
+  }, []);
+
   // --- PRICE HELPERS ---
   const getPriceColor = (priceString: string) => {
     if (!priceString) return "bg-gray-100 text-gray-800 border-gray-200";
@@ -112,7 +153,14 @@ export default function Home() {
   };
 
   const getPriceCategory = (priceString: string) => {
-    const price = parseInt(priceString.toString().replace(/[^0-9]/g, ""));
+    if (!priceString) return "Budget"; // Treat empty as Budget
+    const priceStr = priceString.toString().toLowerCase().trim();
+    // Handle "Free" explicitly - treat as Budget
+    if (priceStr === "free" || priceStr === "n/a") return "Budget";
+    
+    const price = parseInt(priceStr.replace(/[^0-9]/g, ""));
+    if (isNaN(price) || price === 0) return "Budget"; // Treat 0/invalid as Budget
+    
     if (price <= 10000) return "Budget";
     if (price <= 30000) return "Mid";
     return "Splurge";
@@ -135,8 +183,21 @@ export default function Home() {
     } else if (mainFilter !== "All") {
         matchesFilter = type === mainFilter;
     }
+
+    // Area filter
+    let matchesArea = true;
+    if (selectedArea !== "All") {
+      matchesArea = loc.area === selectedArea;
+    }
+
+    // Price filter
+    let matchesPrice = true;
+    if (selectedPrice !== "All") {
+      const priceCategory = getPriceCategory(loc.price || "");
+      matchesPrice = priceCategory === selectedPrice;
+    }
     
-    return matchesSearch && matchesFilter;
+    return matchesSearch && matchesFilter && matchesArea && matchesPrice;
   });
 
   // --- ROULETTE SPIN ---
@@ -146,13 +207,17 @@ export default function Home() {
         const priceCat = getPriceCategory(loc.price || "0");
         const matchesPrice = rouletteFilters.price === "Any" || priceCat === rouletteFilters.price;
         const matchesVibe = rouletteFilters.vibe === "Any" || loc.category === rouletteFilters.vibe;
-        return matchesType && matchesPrice && matchesVibe;
+        const matchesArea = rouletteFilters.area === "All" || loc.area === rouletteFilters.area;
+        return matchesType && matchesPrice && matchesVibe && matchesArea;
     });
 
     if (candidates.length === 0) {
         showToast("No spots found with those filters!");
         return;
     }
+
+    // Store all matching candidates
+    setRouletteMatches(candidates);
 
     setIsSpinning(true);
     setRouletteResult(null);
@@ -167,6 +232,14 @@ export default function Home() {
 
   const priceOptions = [
     { label: "Any Price", value: "Any" },
+    { label: "Budget (₦0 - 10k)", value: "Budget" },
+    { label: "Mid (₦10k - 30k)", value: "Mid" },
+    { label: "Splurge (₦30k+)", value: "Splurge" }
+  ];
+
+  // For advanced filter, use same options but with "All" instead of "Any"
+  const filterPriceOptions = [
+    { label: "All", value: "All" },
     { label: "Budget (₦0 - 10k)", value: "Budget" },
     { label: "Mid (₦10k - 30k)", value: "Mid" },
     { label: "Splurge (₦30k+)", value: "Splurge" }
@@ -188,8 +261,8 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-            {/* Install Button (Hidden unless prompt available) */}
-            {installPrompt && (
+            {/* Install Button (Hidden unless prompt available or iOS) */}
+            {(installPrompt || isIOS) && (
                 <button onClick={handleInstallClick} className="hidden md:flex items-center gap-2 bg-emerald-100 text-emerald-700 font-bold text-xs hover:bg-emerald-200 transition-colors px-3 py-2 rounded-lg">
                     <Download className="h-4 w-4" /> Install
                 </button>
@@ -266,7 +339,7 @@ export default function Home() {
                 <button onClick={() => setIsAddSpotOpen(true)} className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-full text-sm font-bold shadow-sm">
                     <PlusCircle className="h-4 w-4 text-emerald-600" /> Suggest
                 </button>
-                {installPrompt && (
+                {(installPrompt || isIOS) && (
                     <button onClick={handleInstallClick} className="flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full text-sm font-bold text-emerald-800 shadow-sm">
                         <Download className="h-4 w-4" /> Install
                     </button>
@@ -279,15 +352,68 @@ export default function Home() {
           </p>
           
           {/* Search Bar */}
-          <div className="relative max-w-lg mx-auto md:mx-0 group mt-8">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5 group-focus-within:text-emerald-500 transition-colors" />
-            <input
-              type="text"
-              placeholder="Search spots, vibes, or areas..."
-              className="w-full pl-14 pr-4 py-4 bg-white text-gray-900 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-base font-medium placeholder:text-gray-400"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="relative max-w-lg mx-auto md:mx-0 group mt-8 flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5 group-focus-within:text-emerald-500 transition-colors" />
+              <input
+                type="text"
+                placeholder="Search spots, vibes, or areas..."
+                className="w-full pl-14 pr-4 py-4 bg-white text-gray-900 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-base font-medium placeholder:text-gray-400"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="relative filter-dropdown-container">
+              <button
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={`px-4 py-4 bg-white border rounded-2xl shadow-sm hover:bg-gray-50 transition-all flex items-center gap-2 ${
+                  isFilterOpen || selectedArea !== "All" || selectedPrice !== "All"
+                    ? "border-emerald-500 text-emerald-600"
+                    : "border-gray-200 text-gray-600"
+                }`}
+              >
+                <Filter className="h-5 w-5" />
+              </button>
+              
+              {/* Filter Dropdown */}
+              {isFilterOpen && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 z-50">
+                  <div className="space-y-4">
+                    {/* Area Select */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Area</label>
+                      <select
+                        value={selectedArea}
+                        onChange={(e) => setSelectedArea(e.target.value)}
+                        className="w-full p-3 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl font-medium focus:outline-none focus:border-emerald-500 appearance-none"
+                      >
+                        {uniqueAreas.map((area) => (
+                          <option key={area} value={area}>
+                            {area}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Price Select */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Price</label>
+                      <select
+                        value={selectedPrice}
+                        onChange={(e) => setSelectedPrice(e.target.value)}
+                        className="w-full p-3 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl font-medium focus:outline-none focus:border-emerald-500 appearance-none"
+                      >
+                        {filterPriceOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Filter Pills */}
@@ -468,7 +594,12 @@ export default function Home() {
             <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 duration-300 relative border border-gray-100">
                
                <button 
-                 onClick={() => { setIsRouletteOpen(false); setIsSpinning(false); setRouletteResult(null); }}
+                 onClick={() => { 
+                   setIsRouletteOpen(false); 
+                   setIsSpinning(false); 
+                   setRouletteResult(null);
+                   setRouletteMatches([]);
+                 }}
                  className="absolute top-4 right-4 p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-900 z-10"
                >
                  <X className="h-5 w-5" />
@@ -520,6 +651,22 @@ export default function Home() {
                                     </button>
                                 ))}
                             </div>
+                        </div>
+                        
+                        {/* Area Filter */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Area</label>
+                            <select 
+                                value={rouletteFilters.area}
+                                onChange={(e) => setRouletteFilters({...rouletteFilters, area: e.target.value})}
+                                className="w-full p-3 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl font-bold focus:outline-none focus:border-emerald-500 appearance-none"
+                            >
+                                {uniqueAreas.map(area => (
+                                    <option key={area} value={area}>
+                                        {area === "All" ? "Any Area" : area}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         
                         {/* Vibe Filter */}
@@ -578,24 +725,151 @@ export default function Home() {
                         </p>
                     </div>
 
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={() => setRouletteResult(null)}
-                            className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
-                        >
-                            Spin Again
-                        </button>
-                        <Link 
-                            href={`/restaurant/${rouletteResult?.id}`}
-                            className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition-colors block"
-                        >
-                            View Details
-                        </Link>
+                    <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setRouletteResult(null)}
+                                className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                            >
+                                Spin Again
+                            </button>
+                            <Link 
+                                href={`/restaurant/${rouletteResult?.id}`}
+                                className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 transition-colors block"
+                            >
+                                View Details
+                            </Link>
+                        </div>
+                        {rouletteMatches.length > 1 && (
+                            <button 
+                                onClick={() => setIsSimilarSpotsOpen(true)}
+                                className="w-full py-3 bg-emerald-50 text-emerald-700 font-bold rounded-xl hover:bg-emerald-100 transition-colors border border-emerald-200"
+                            >
+                                Explore Similar Spots ({rouletteMatches.length - 1})
+                            </button>
+                        )}
                     </div>
                  </div>
                )}
             </div>
          </div>
+      )}
+
+      {/* Similar Spots List Modal */}
+      {isSimilarSpotsOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2rem] p-6 max-w-2xl w-full max-h-[80vh] flex flex-col shadow-2xl relative">
+            <button 
+              onClick={() => setIsSimilarSpotsOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-gray-400 hover:text-gray-900 z-10"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 className="text-2xl font-black text-gray-900 mb-4 pr-10">Similar Spots</h2>
+            <p className="text-gray-500 text-sm mb-6">
+              Other spots that match your filters ({rouletteMatches.length - 1} {rouletteMatches.length - 1 === 1 ? 'option' : 'options'})
+            </p>
+
+            <div className="overflow-y-auto flex-1 space-y-3 pr-2">
+              {rouletteMatches
+                .filter((match: any) => match.id !== rouletteResult?.id)
+                .map((match: any) => (
+                  <Link
+                    key={match.id}
+                    href={`/restaurant/${match.id}`}
+                    onClick={() => setIsSimilarSpotsOpen(false)}
+                    className="flex gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-100 group"
+                  >
+                    <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                      <img 
+                        src={match.image} 
+                        alt={match.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h3 className="font-bold text-gray-900 text-base group-hover:text-emerald-600 transition-colors">
+                          {match.name}
+                        </h3>
+                        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase border flex-shrink-0 ${getPriceColor(match.price || "")}`}>
+                          {match.price || "N/A"}
+                        </span>
+                      </div>
+                      <p className="text-gray-500 text-xs font-medium flex items-center gap-1 mb-2">
+                        <MapPin className="h-3 w-3 text-emerald-500" />
+                        {match.area}, {match.type}
+                      </p>
+                      <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
+                        {match.description || "A great spot to visit in Lagos."}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-emerald-600 transition-colors flex-shrink-0 mt-1" />
+                  </Link>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* iOS Install Instructions Modal */}
+      {isIOSOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl relative">
+            <button 
+              onClick={() => setIsIOSOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+            >
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
+            
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Install GidiSpots</h2>
+            <p className="text-gray-500 mb-6 text-sm">Follow these steps to add GidiSpots to your home screen:</p>
+
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 h-8 w-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">
+                  1
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-900 font-bold text-sm mb-1">Tap the Share button</p>
+                  <p className="text-gray-500 text-xs">Look for the share icon in your Safari browser toolbar (bottom on iPhone, top on iPad)</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 h-8 w-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">
+                  2
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-900 font-bold text-sm mb-1">Select "Add to Home Screen"</p>
+                  <p className="text-gray-500 text-xs">Scroll down in the share menu and tap "Add to Home Screen"</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 h-8 w-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">
+                  3
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-900 font-bold text-sm mb-1">Confirm installation</p>
+                  <p className="text-gray-500 text-xs">Tap "Add" in the top right corner to finish</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile FAB (Install) */}
+      {(installPrompt || isIOS) && (
+        <button 
+          onClick={handleInstallClick}
+          className="md:hidden fixed bottom-6 left-6 h-16 w-16 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-40 border-4 border-white/20"
+        >
+          <Download className="h-7 w-7" />
+        </button>
       )}
 
       {/* Mobile FAB (Roulette) */}
@@ -605,6 +879,42 @@ export default function Home() {
       >
         <Dice5 className="h-7 w-7" />
       </button>
+    {isIOSOpen && (
+      <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-8">
+        <div className="relative max-w-md mx-auto bg-white rounded-2xl shadow-2xl border border-gray-100 px-6 py-7 flex flex-col gap-5">
+          {/* Close Button */}
+          <button
+            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            onClick={() => setIsIOSOpen(false)}
+            aria-label="Close"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <h3 className="text-lg font-bold text-gray-900 mb-1">Install App</h3>
+          <p className="text-gray-500 text-sm mb-4">
+            Add GidiSpots to your home screen for faster access!
+          </p>
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 h-8 w-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">
+                1
+              </div>
+              <div className="flex-1 flex items-center">
+                <p className="text-gray-900 font-medium text-sm">Tap the <span className="font-semibold">Share</span> button</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 h-8 w-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-sm">
+                2
+              </div>
+              <div className="flex-1 flex items-center">
+                <p className="text-gray-900 font-medium text-sm">Tap <span className="font-semibold">Add to Home Screen</span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
 
     </main>
   );
